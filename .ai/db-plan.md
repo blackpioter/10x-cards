@@ -6,9 +6,9 @@
 
 This table is managed by Supabase Auth.
 
-- **id:** UUID, Primary Key, DEFAULT uuid_generate_v4() -- requires the uuid-ossp extension
+- **id:** UUID, Primary Key
 - **email:** VARCHAR, NOT NULL, UNIQUE
-- **encrypted_password:** TEXT, NOT NULL
+- **encrypted_password:** VARCHAR, NOT NULL
 - **created_at:** TIMESTAMP, NOT NULL, DEFAULT CURRENT_TIMESTAMP
 - **confirmed_at:** TIMESTAMP, Nullable
 
@@ -88,6 +88,5 @@ _Similar policies should be implemented for `users`, `generations`, and `generat
 
 ## 5. Additional Notes
 
-- Ensure the `uuid-ossp` extension is enabled to allow usage of `uuid_generate_v4()` for default UUID generation.
 - All foreign key constraints enforce referential integrity and include appropriate ON DELETE behavior.
 - The design adheres to 3NF for normalization, while indexes on filter columns (status, source, dates) will help optimize query performance for the MVP.
