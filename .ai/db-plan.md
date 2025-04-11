@@ -3,6 +3,9 @@
 ## 1. Tables
 
 ### 1.1. users
+
+This table is managed by Supabase Auth.
+
 - **id:** UUID, Primary Key, DEFAULT uuid_generate_v4() -- requires the uuid-ossp extension
 - **email:** VARCHAR, NOT NULL, UNIQUE
 - **encrypted_password:** TEXT, NOT NULL
