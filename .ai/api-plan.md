@@ -2,23 +2,14 @@
 
 ## 1. Resources
 
-- **Users** (table: users): Represents user accounts with fields such as `id`, `email`, `encrypted_password`, `created_at`, and `confirmed_at`. Managed by Supabase Auth.
+- **Users** (table: users): Managed by Supabase Auth.
 - **Flashcards** (table: flashcards): Contains flashcard details including `id`, `user_id`, `generation_id`, `front` (max 200 characters), `back` (max 500 characters), `status` (values: pending, accepted, rejected), `source` (values: ai-full, ai-edited, manual), and review meta-data (e.g., `review_count`, `next_review_date`).
 - **Generations** (table: generations): Captures flashcard generation events with fields like `id`, `user_id`, `source_text_length` (between 1000 and 10000 characters), counts for generated and accepted flashcards, `source_text_hash`, and duration metadata.
 - **Generation Error Logs** (table: generation_error_logs): Stores error details encountered during flashcard generation with fields such as `id`, `user_id`, `error_details`, and `created_at`.
 
 ## 2. Endpoints
 
-### a. Users
 
-- **GET /users/:id**
-  - **Description:** Retrieve user details for data review (GDPR compliance).
-  - **Response:** User object (excluding sensitive data such as encrypted_password).
-  - **Notes:** Must enforce that the user can only access their own data.
-
-- **DELETE /users/:id**
-  - **Description:** Delete a user account along with associated flashcards (GDPR compliant deletion).
-  - **Response:** Success message upon deletion.
 
 ### b. Flashcards
 
