@@ -27,14 +27,14 @@ export type GenerationErrorLog = Database["public"]["Tables"]["generation_error_
  *
  * This directly corresponds to the flashcards table row.
  */
-export type FlashcardDTO = Pick<
+export type FlashcardDto = Pick<
   Flashcard,
   "id" | "front" | "back" | "source" | "generation_id" | "created_at" | "updated_at"
 >;
 
 // Flashcard List Response DTO based on the API plan
 export interface FlashcardListResponseDto {
-  data: FlashcardDTO[];
+  data: FlashcardDto[];
   pagination: PaginationDto;
 }
 
@@ -84,7 +84,7 @@ export interface GenerationCreateResponseDto {
 }
 
 export type GenerationDetailDto = Generation & {
-  flashcards?: FlashcardDTO[];
+  flashcards?: FlashcardDto[];
 };
 
 /* ============================================================
