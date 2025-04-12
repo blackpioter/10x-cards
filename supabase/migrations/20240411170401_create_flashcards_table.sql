@@ -12,6 +12,7 @@ create table flashcards (
     status text not null default 'pending' check (status in ('pending', 'accepted', 'rejected')),
     source text not null check (source in ('ai-full', 'ai-edited', 'manual')),
     created_at timestamp not null default current_timestamp,
+    updated_at timestamp not null default current_timestamp,
     last_reviewed timestamp,
     next_review_date timestamp,
     review_count integer not null default 0 check (review_count >= 0),
