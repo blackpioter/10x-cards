@@ -3,6 +3,9 @@ import { z } from "zod";
 import type { GenerateFlashcardsCommand } from "../../types";
 import { flashcardGenerationService } from "../../lib/services/flashcardGenerationService";
 
+// Prevent prerendering of API route
+export const prerender = false;
+
 // Validation schema for the request body
 const generateFlashcardsSchema = z.object({
   source_text: z
