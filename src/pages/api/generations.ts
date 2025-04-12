@@ -2,8 +2,6 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { GenerateFlashcardsCommand } from "../../types";
 import { flashcardGenerationService } from "../../lib/services/flashcardGenerationService";
-import { loggingService } from "../../lib/services/loggingService";
-import { createHash } from "crypto";
 
 // Validation schema for the request body
 const generateFlashcardsSchema = z.object({
@@ -29,18 +27,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const validationResult = generateFlashcardsSchema.safeParse(body);
 
     if (!validationResult.success) {
-      // Log validation error
-      await loggingService.logGenerationError({
-        userId: session.user.id,
-        errorCode: "VALIDATION_FAILED",
-        errorMessage: JSON.stringify(validationResult.error.errors),
-        model: "validation",
-        sourceTextHash: createHash("sha256")
-          .update(body.source_text || "")
-          .digest("hex"),
-        sourceTextLength: (body.source_text || "").length,
-      });
-
+      console.error("Validation failed:", validationResult.error.errors);
       return new Response(
         JSON.stringify({
           error: "Validation failed",
@@ -67,19 +54,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
   } catch (error) {
     console.error("Error processing generation request:", error);
-
-    // Log unexpected errors
-    if (error instanceof Error) {
-      await loggingService.logGenerationError({
-        userId: "system", // We might not have session here
-        errorCode: "UNEXPECTED_ERROR",
-        errorMessage: error.message,
-        model: "system",
-        sourceTextHash: "error", // We might not have access to the source text
-        sourceTextLength: 0,
-      });
-    }
-
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

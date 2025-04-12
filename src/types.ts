@@ -78,7 +78,7 @@ export interface FlashcardProposalDto {
 }
 
 export interface GenerationCreateResponseDto {
-  generation_id: number;
+  generation_id: string;
   flashcard_proposals: FlashcardProposalDto[];
   generated_count: number;
 }

@@ -1,6 +1,6 @@
 import type { GenerateFlashcardsCommand, GenerationCreateResponseDto, FlashcardProposalDto } from "../../types";
-import { loggingService } from "./loggingService";
 import { createHash } from "crypto";
+import { supabaseClient } from "../../db/supabase.client";
 
 export class FlashcardGenerationService {
   async generateFlashcards(command: GenerateFlashcardsCommand, userId: string): Promise<GenerationCreateResponseDto> {
@@ -29,26 +29,52 @@ export class FlashcardGenerationService {
         },
       ];
 
+      // Store generation in database
+      const { data: generation, error: generationError } = await supabaseClient
+        .from("generations")
+        .insert({
+          user_id: userId,
+          source_text_length: command.source_text.length,
+          source_text_hash: sourceTextHash,
+          generated_count: mockProposals.length,
+          accepted_unedited_count: 0,
+          accepted_edited_count: 0,
+        })
+        .select()
+        .single();
+
+      if (generationError) {
+        throw new Error(`Failed to store generation: ${generationError.message}`);
+      }
+
+      // Store flashcard proposals
+      const { error: flashcardsError } = await supabaseClient.from("flashcards").insert(
+        mockProposals.map((proposal) => ({
+          user_id: userId,
+          generation_id: generation.id,
+          front: proposal.front,
+          back: proposal.back,
+          source: proposal.source,
+          status: "pending",
+        }))
+      );
+
+      if (flashcardsError) {
+        throw new Error(`Failed to store flashcards: ${flashcardsError.message}`);
+      }
+
       // Log successful generation
       console.log(`Successfully generated ${mockProposals.length} flashcards for user: ${userId}`);
       console.log(`Source text hash: ${sourceTextHash}, length: ${command.source_text.length}`);
 
       return {
-        generation_id: Math.floor(Math.random() * 1000),
+        generation_id: generation.id,
         flashcard_proposals: mockProposals,
         generated_count: mockProposals.length,
       };
     } catch (error) {
-      // Log error with details
-      await loggingService.logGenerationError({
-        userId,
-        errorCode: "GENERATION_FAILED",
-        errorMessage: error instanceof Error ? error.message : "Unknown error during generation",
-        model: "mock-model",
-        sourceTextHash: createHash("sha256").update(command.source_text).digest("hex"),
-        sourceTextLength: command.source_text.length,
-      });
-
+      // Log error
+      console.error("Error generating flashcards:", error);
       throw error;
     }
   }
