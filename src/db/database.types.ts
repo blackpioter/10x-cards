@@ -80,20 +80,32 @@ export interface Database {
       generation_error_logs: {
         Row: {
           created_at: string;
-          error_details: string;
+          error_code: string;
+          error_message: string;
           id: string;
+          model: string;
+          source_text_hash: string;
+          source_text_length: number;
           user_id: string;
         };
         Insert: {
           created_at?: string;
-          error_details: string;
-          id?: string;
+          error_code: string;
+          error_message: string;
+          model: string;
+          source_text_hash: string;
+          source_text_length: number;
           user_id: string;
+          id?: string;
         };
         Update: {
           created_at?: string;
-          error_details?: string;
+          error_code?: string;
+          error_message?: string;
           id?: string;
+          model?: string;
+          source_text_hash?: string;
+          source_text_length?: number;
           user_id?: string;
         };
         Relationships: [];
