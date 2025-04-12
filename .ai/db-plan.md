@@ -42,7 +42,11 @@ This table is managed by Supabase Auth.
 ### 1.4. generation_error_logs
 - **id:** UUID, Primary Key, DEFAULT uuid_generate_v4()
 - **user_id:** UUID, NOT NULL, FOREIGN KEY REFERENCES users(id) ON DELETE CASCADE
-- **error_details:** TEXT, NOT NULL
+- **error_code:** TEXT, NOT NULL
+- **error_message:** TEXT, NOT NULL
+- **model:** TEXT, NOT NULL
+- **source_text_hash:** TEXT, NOT NULL
+- **source_text_length:** INTEGER, NOT NULL
 - **created_at:** TIMESTAMP, NOT NULL, DEFAULT CURRENT_TIMESTAMP
 
 ## 2. Relationships
@@ -71,6 +75,9 @@ This table is managed by Supabase Auth.
 - **generation_error_logs** table:
   - Index on `user_id`
   - Index on `created_at`
+  - Index on `error_code`
+  - Index on `model`
+  - Index on `source_text_hash`
 
 ## 4. Row Level Security (RLS) Policies
 
