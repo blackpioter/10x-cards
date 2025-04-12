@@ -8,11 +8,13 @@ export class GenerationService {
     sourceText,
     sourceTextHash,
     generatedCount,
+    generationDuration,
   }: {
     userId: string;
     sourceText: string;
     sourceTextHash: string;
     generatedCount: number;
+    generationDuration: number; // duration in milliseconds
   }) {
     const { data: generation, error: generationError } = await supabaseClient
       .from("generations")
@@ -21,6 +23,7 @@ export class GenerationService {
         source_text_length: sourceText.length,
         source_text_hash: sourceTextHash,
         generated_count: generatedCount,
+        generation_duration: `${generationDuration} milliseconds`, // PostgreSQL interval format
         accepted_unedited_count: 0,
         accepted_edited_count: 0,
       })
@@ -63,6 +66,9 @@ export class GenerationService {
     // Mock implementation - using first 50 chars of source text as a mock front
     const previewText = sourceText.slice(0, 50);
 
+    // Simulate AI processing time
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     // In the future, this will call the actual AI service
     return [
       {
@@ -88,8 +94,11 @@ export class GenerationService {
       // Calculate source text hash for logging
       const sourceTextHash = createHash("sha256").update(command.source_text).digest("hex");
 
-      // Generate flashcard proposals using AI
+      // Generate flashcard proposals using AI and measure duration
+      const startTime = performance.now();
       const proposals = await this.callAIService(command.source_text);
+      const endTime = performance.now();
+      const generationDuration = Math.round(endTime - startTime); // duration in milliseconds
 
       // Store generation metadata
       const generation = await this.saveGenerationMetadata({
@@ -97,6 +106,7 @@ export class GenerationService {
         sourceText: command.source_text,
         sourceTextHash,
         generatedCount: proposals.length,
+        generationDuration,
       });
 
       // Store flashcard proposals
@@ -109,6 +119,7 @@ export class GenerationService {
       // Log successful generation
       console.log(`Successfully generated ${proposals.length} flashcards for user: ${userId}`);
       console.log(`Source text hash: ${sourceTextHash}, length: ${command.source_text.length}`);
+      console.log(`Generation duration: ${generationDuration}ms`);
 
       return {
         generation_id: generation.id,
