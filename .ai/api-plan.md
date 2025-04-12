@@ -2,10 +2,39 @@
 
 ## 1. Resources
 
-- **Users** (table: users): Managed by Supabase Auth.
-- **Flashcards** (table: flashcards): Contains flashcard details including `id`, `user_id`, `generation_id`, `front` (max 200 characters), `back` (max 500 characters), `status` (values: pending, accepted, rejected), `source` (values: ai-full, ai-edited, manual), and review meta-data (e.g., `review_count`, `next_review_date`).
-- **Generations** (table: generations): Captures flashcard generation events with fields like `id`, `user_id`, `source_text_length` (between 1000 and 10000 characters), counts for generated and accepted flashcards, `source_text_hash`, and duration metadata.
-- **Generation Error Logs** (table: generation_error_logs): Stores error details encountered during flashcard generation with fields such as `id`, `user_id`, `error_details`, and `created_at`.
+### Users
+- **Table:** users
+- **Description:** Managed by Supabase Auth.
+
+### Flashcards
+- **Table:** flashcards
+- **Fields:**
+  - `id`: UUID primary key
+  - `user_id`: Reference to user
+  - `generation_id`: Reference to generation (optional)
+  - `front`: Question text (max 200 characters)
+  - `back`: Answer text (max 500 characters)
+  - `status`: 'pending', 'accepted', or 'rejected'
+  - `source`: 'ai-full', 'ai-edited', or 'manual'
+  - Review metadata: `review_count`, `next_review_date`, etc.
+
+### Generations
+- **Table:** generations
+- **Fields:**
+  - `id`: UUID primary key
+  - `user_id`: Reference to user
+  - `source_text_length`: Length of input text (1000-10000 chars)
+  - `generated_count`: Number of flashcards generated
+  - `source_text_hash`: Hash of input text
+  - Duration and acceptance metadata
+
+### Generation Error Logs
+- **Table:** generation_error_logs
+- **Fields:**
+  - `id`: UUID primary key
+  - `user_id`: Reference to user
+  - `error_details`: Error information
+  - `created_at`: Timestamp of error
 
 ## 2. Endpoints
 
