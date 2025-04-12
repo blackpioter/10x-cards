@@ -1,6 +1,6 @@
-import type { GenerateFlashcardsCommand, GenerationCreateResponseDto, FlashcardProposalDto } from "../../types";
+import type { GenerateFlashcardsCommand, GenerationCreateResponseDto, FlashcardProposalDto } from "../types";
 import { createHash } from "crypto";
-import { supabaseClient } from "../../db/supabase.client";
+import { supabaseClient } from "../db/supabase.client";
 
 export class FlashcardGenerationService {
   async generateFlashcards(command: GenerateFlashcardsCommand, userId: string): Promise<GenerationCreateResponseDto> {

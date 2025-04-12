@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { GenerateFlashcardsCommand } from "../../types";
-import { flashcardGenerationService } from "../../lib/services/flashcardGenerationService";
+import { flashcardGenerationService } from "../../lib/generation.service";
 
 // Prevent prerendering of API route
 export const prerender = false;
