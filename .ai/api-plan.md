@@ -104,11 +104,7 @@
   - **Description:** Retrieve aggregated statistics on flashcard generations (e.g., total generated, accepted counts).
   - **Response:** A JSON object with statistical data.
 
-## 3. Authentication and Authorization
 
-- All secured endpoints require JWT authentication. Tokens are issued via Supabase Auth, ensuring that each request is associated with a valid user.
-- Row-Level Security (RLS) is enforced at the database level so that users can only access resources that belong to them (e.g., flashcards with `user_id` equal to the authenticated user's id).
-- Additional measures such as rate limiting and input sanitization are recommended to enhance security.
 
 ## 4. Validation and Business Logic
 
