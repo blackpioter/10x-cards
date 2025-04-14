@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "../db/supabase.client";
+import { DEFAULT_USER_ID, supabaseClient } from "../db/supabase.client";
 import type { FlashcardCreateCommand, FlashcardDto } from "../types";
 
 export class FlashcardsError extends Error {
@@ -15,21 +15,14 @@ export class FlashcardsError extends Error {
  * @throws {FlashcardsError} with code 404 if generation_id doesn't exist
  * @throws {FlashcardsError} with code 500 for other errors
  */
-export async function createFlashcards(
-  supabase: SupabaseClient,
-  command: FlashcardCreateCommand
-): Promise<FlashcardDto[]> {
+export async function createFlashcards(command: FlashcardCreateCommand): Promise<FlashcardDto[]> {
   console.log("[FlashcardService] Creating flashcards:", {
     count: command.flashcards.length,
     hasGenerationIds: command.flashcards.some(f => f.generation_id !== null)
   });
 
-  // Start a transaction
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user?.id) {
-    console.error("[FlashcardService] User not authenticated");
-    throw new FlashcardsError("User not authenticated", 401);
-  }
+  // In development, use the default user ID
+  const userId = DEFAULT_USER_ID;
 
   // Verify all generation_ids exist if provided
   const generationIds = command.flashcards
@@ -39,11 +32,11 @@ export async function createFlashcards(
   if (generationIds.length > 0) {
     console.log("[FlashcardService] Verifying generation IDs:", generationIds);
 
-    const { data: generations, error: generationsError } = await supabase
+    const { data: generations, error: generationsError } = await supabaseClient
       .from("generations")
       .select("id")
       .in("id", generationIds)
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     if (generationsError) {
       console.error("[FlashcardService] Error verifying generations:", generationsError);
@@ -62,12 +55,12 @@ export async function createFlashcards(
   // Create flashcards in a transaction
   console.log("[FlashcardService] Creating flashcards in database");
 
-  const { data: flashcards, error: insertError } = await supabase
+  const { data: flashcards, error: insertError } = await supabaseClient
     .from("flashcards")
     .insert(
       command.flashcards.map((f) => ({
         ...f,
-        user_id: user.id,
+        user_id: userId,
       }))
     )
     .select();

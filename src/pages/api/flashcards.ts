@@ -19,7 +19,7 @@ const flashcardsCreateCommandSchema = z.object({
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request }) => {
   try {
     // Parse and validate request body
     const body = await request.json();
@@ -41,7 +41,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const command = validationResult.data as FlashcardCreateCommand;
 
     // Create flashcards using the service
-    const flashcards = await createFlashcards(locals.supabase, command);
+    const flashcards = await createFlashcards(command);
 
     return new Response(
       JSON.stringify({
