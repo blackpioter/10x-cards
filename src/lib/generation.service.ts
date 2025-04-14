@@ -135,4 +135,4 @@ export class GenerationService {
 }
 
 // Export singleton instance
-export const flashcardGenerationService = new GenerationService();
+export const generationService = new GenerationService();

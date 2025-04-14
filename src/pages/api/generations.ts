@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { GenerateFlashcardsCommand } from "../../types";
-import { flashcardGenerationService } from "../../lib/generation.service";
+import { generationService } from "../../lib/generation.service";
 
 // Prevent prerendering of API route
 export const prerender = false;
@@ -49,7 +49,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     };
 
     // Call the generation service
-    const result = await flashcardGenerationService.generateFlashcards(command, session.user.id);
+    const result = await generationService.generateFlashcards(command, session.user.id);
 
     return new Response(JSON.stringify(result), {
       status: 201,

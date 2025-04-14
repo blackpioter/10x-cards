@@ -44,7 +44,7 @@ export interface FlashcardCreateDto {
   front: string;
   back: string;
   source: FlashcardSource;
-  generation_id: number | null;
+  generation_id: string | null;
 }
 
 export interface FlashcardCreateCommand {
