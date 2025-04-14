@@ -91,5 +91,4 @@ Odpowiedź to rekord generacji z metadanymi oraz listą propozycji fiszek:
 4. **Interakcja z bazą danych:** Implementacja operacji zapisu w tabelach `generations`, `flashcards` oraz `generation_error_logs`.
 5. **Zabezpieczenia:** Dodanie uwierzytelniania przy użyciu Supabase Auth oraz walidacji danych.
 6. **Obsługa błędów:** Implementacja mechanizmu obsługi błędów z odpowiednimi kodami statusu.
-7. **Testowanie:** Utworzenie testów jednostkowych oraz integracyjnych dla endpointu.
-8. **Code review i wdrożenie:** Przeprowadzenie przeglądu kodu oraz wdrożenie do środowiska testowego.
+7. **Testy manualne i review kodu:** Przegląd wdrożonego kodu oraz testy na środowisku testowym.
