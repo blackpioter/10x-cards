@@ -9,9 +9,9 @@ const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 export type SupabaseClient = BaseSupabaseClient<Database>;
 
 // Default development user ID from environment variables
-const defaultUserId = import.meta.env.DEFAULT_USER_ID;
+export const DEFAULT_USER_ID = import.meta.env.DEFAULT_USER_ID;
 
 export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // Helper function to get the current user ID (using default for development)
-export const getCurrentUserId = () => defaultUserId;
+export const getCurrentUserId = () => DEFAULT_USER_ID;
