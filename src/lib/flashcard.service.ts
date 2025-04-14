@@ -34,7 +34,7 @@ export async function createFlashcards(
   // Verify all generation_ids exist if provided
   const generationIds = command.flashcards
     .map((f) => f.generation_id)
-    .filter((id): id is number => id !== null);
+    .filter((id): id is string => id !== null);
 
   if (generationIds.length > 0) {
     console.log("[FlashcardService] Verifying generation IDs:", generationIds);

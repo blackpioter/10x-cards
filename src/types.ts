@@ -44,7 +44,7 @@ export interface FlashcardCreateDto {
   front: string;
   back: string;
   source: FlashcardSource;
-  generation_id: number | null;
+  generation_id: string | null;
 }
 
 export interface FlashcardCreateCommand {
@@ -55,7 +55,7 @@ export type FlashcardUpdateDto = Partial<{
   front: string;
   back: string;
   source: FlashcardSource;
-  generation_id: number | null;
+  generation_id: string | null;
 }>;
 
 /* ============================================================

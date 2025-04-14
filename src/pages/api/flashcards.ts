@@ -10,7 +10,7 @@ const flashcardCreateSchema = z.object({
   source: z.enum(["manual", "ai-full", "ai-edited"], {
     errorMap: () => ({ message: "Invalid source value" }),
   }),
-  generation_id: z.number().nullable(),
+  generation_id: z.string().uuid("Invalid generation ID format").nullable(),
 });
 
 const flashcardsCreateCommandSchema = z.object({
