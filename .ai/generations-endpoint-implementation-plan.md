@@ -62,7 +62,7 @@ Odpowiedź to rekord generacji z metadanymi oraz listą propozycji fiszek:
 ## 5. Przepływ danych
 1. Klient wysyła żądanie POST z `source_text`.
 2. Endpoint weryfikuje poprawność długości `source_text` przy użyciu walidacji (np. Zod).
-3. Po walidacji wywoływana jest logika generowania fiszek umieszczona w osobnej usłudze (`src/lib/services/flashcardGenerationService.ts`).
+3. Po walidacji wywoływana jest logika generowania fiszek umieszczona w osobnej usłudze (`src/lib/generation.service.ts`).
 4. Wyniki generacji są zapisywane w tabeli `generations` wraz z odpowiednimi metadanymi.
 5. Propozycje fiszek (tymczasowe) są zapisywane w tabeli `flashcards` z ustawionym statusem `pending`.
 6. W przypadku wystąpienia błędu podczas generacji, zapisywany jest wpis w tabeli `generation_error_logs`.
@@ -87,7 +87,7 @@ Odpowiedź to rekord generacji z metadanymi oraz listą propozycji fiszek:
 ## 9. Etapy wdrożenia
 1. **Projektowanie endpointu:** Utworzenie pliku API np. `src/pages/api/generations.ts` z metodą POST.
 2. **Walidacja wejścia:** Implementacja weryfikacji żądania przy użyciu Zod.
-3. **Wyodrębnienie logiki generacji:** Refaktoryzacja logiki generacji fiszek do osobnej usługi w `src/lib/services/`.
+3. **Wyodrębnienie logiki generacji:** Refaktoryzacja logiki generacji fiszek do osobnej usługi w `src/lib/`.
 4. **Interakcja z bazą danych:** Implementacja operacji zapisu w tabelach `generations`, `flashcards` oraz `generation_error_logs`.
 5. **Zabezpieczenia:** Dodanie uwierzytelniania przy użyciu Supabase Auth oraz walidacji danych.
 6. **Obsługa błędów:** Implementacja mechanizmu obsługi błędów z odpowiednimi kodami statusu.
