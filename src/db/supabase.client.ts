@@ -12,6 +12,3 @@ export type SupabaseClient = BaseSupabaseClient<Database>;
 export const DEFAULT_USER_ID = import.meta.env.DEFAULT_USER_ID;
 
 export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
-
-// Helper function to get the current user ID (using default for development)
-export const getCurrentUserId = () => DEFAULT_USER_ID;
