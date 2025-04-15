@@ -26,6 +26,8 @@ export function FlashcardListItem({
 }: FlashcardListItemProps) {
   const [editedFront, setEditedFront] = React.useState(proposal.front);
   const [editedBack, setEditedBack] = React.useState(proposal.back);
+  const frontId = React.useId();
+  const backId = React.useId();
 
   // Reset edited content when proposal changes or editing is cancelled
   React.useEffect(() => {
@@ -60,8 +62,11 @@ export function FlashcardListItem({
           // Edit mode
           <>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Front</label>
+              <label htmlFor={frontId} className="text-sm font-medium">
+                Front
+              </label>
               <Textarea
+                id={frontId}
                 value={editedFront}
                 onChange={(e) => setEditedFront(e.target.value)}
                 placeholder="Front side of the flashcard"
@@ -71,8 +76,11 @@ export function FlashcardListItem({
               <div className="text-xs text-muted-foreground">{editedFront.length}/200 characters</div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Back</label>
+              <label htmlFor={backId} className="text-sm font-medium">
+                Back
+              </label>
               <Textarea
+                id={backId}
                 value={editedBack}
                 onChange={(e) => setEditedBack(e.target.value)}
                 placeholder="Back side of the flashcard"

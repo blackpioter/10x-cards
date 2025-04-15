@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { FlashcardProposalViewModel } from "../types";
 import { FlashcardListItem } from "./FlashcardListItem";
+import { Button } from "./ui/button";
 
 interface FlashcardListProps {
   proposals: FlashcardProposalViewModel[];
@@ -53,6 +54,21 @@ export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: 
         <span>
           {stats.edited} edited • {stats.accepted} accepted • {stats.rejected} rejected
         </span>
+      </div>
+
+      {/* Bulk actions */}
+      <div className="flex justify-end space-x-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onBulkAction("accept-all")}
+          disabled={proposals.every((p) => p.status === "accepted")}
+        >
+          Accept All
+        </Button>
+        <Button size="sm" onClick={() => onBulkAction("save-accepted")} disabled={!stats.accepted}>
+          Save Accepted ({stats.accepted})
+        </Button>
       </div>
 
       {/* Flashcard list */}

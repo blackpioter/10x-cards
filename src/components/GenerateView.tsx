@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { GenerateViewState } from "../types";
+import type { GenerateViewState, FlashcardProposalDto, FlashcardProposalViewModel } from "../types";
 import { TextInputSection } from "./TextInputSection";
 import { GenerationProgress } from "./GenerationProgress";
 import { FlashcardReviewSection } from "./FlashcardReviewSection";
@@ -31,11 +31,11 @@ export function GenerateView() {
         stage: "review",
         generationId: result.generation_id,
         proposals: {
-          proposals: result.flashcard_proposals.map((proposal: any) => ({
+          proposals: result.flashcard_proposals.map((proposal: FlashcardProposalDto) => ({
             id: crypto.randomUUID(),
             front: proposal.front,
             back: proposal.back,
-            status: "pending",
+            status: "pending" as const,
             isEdited: false,
           })),
           stats: {
@@ -55,7 +55,15 @@ export function GenerateView() {
     }
   };
 
-  const handleComplete = async (accepted: any[]) => {
+  const handleComplete = async (accepted: FlashcardProposalViewModel[]) => {
+    if (!state.generationId) {
+      setState((prev) => ({
+        ...prev,
+        error: "Generation ID is missing",
+      }));
+      return;
+    }
+
     try {
       const response = await fetch("/api/flashcards", {
         method: "POST",
@@ -103,11 +111,7 @@ export function GenerateView() {
       {state.stage === "generating" && <GenerationProgress status="generating" />}
 
       {state.stage === "review" && state.proposals && (
-        <FlashcardReviewSection
-          flashcards={state.proposals.proposals}
-          onComplete={handleComplete}
-          generationId={state.generationId!}
-        />
+        <FlashcardReviewSection flashcards={state.proposals.proposals} onComplete={handleComplete} />
       )}
     </div>
   );

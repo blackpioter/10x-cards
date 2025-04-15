@@ -6,10 +6,9 @@ import { FlashcardList } from "./FlashcardList";
 interface FlashcardReviewSectionProps {
   flashcards: FlashcardProposalViewModel[];
   onComplete: (accepted: FlashcardProposalViewModel[]) => void;
-  generationId: string;
 }
 
-export function FlashcardReviewSection({ flashcards, onComplete, generationId }: FlashcardReviewSectionProps) {
+export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardReviewSectionProps) {
   const [proposals, setProposals] = React.useState<FlashcardProposalViewModel[]>(flashcards);
   const [filter, setFilter] = React.useState<"all" | "accepted" | "rejected">("all");
 
@@ -123,19 +122,6 @@ export function FlashcardReviewSection({ flashcards, onComplete, generationId }:
         onBulkAction={handleBulkAction}
         stats={stats}
       />
-
-      <div className="flex justify-end space-x-4">
-        <Button
-          variant="outline"
-          onClick={() => handleBulkAction("accept-all")}
-          disabled={proposals.every((p) => p.status === "accepted")}
-        >
-          Accept All
-        </Button>
-        <Button onClick={() => handleBulkAction("save-accepted")} disabled={!stats.accepted}>
-          Save Accepted ({stats.accepted})
-        </Button>
-      </div>
     </div>
   );
 }
