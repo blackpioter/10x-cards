@@ -2,7 +2,7 @@ import * as React from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Edit2, RotateCcw } from "lucide-react";
+import { Check, X, Edit2, RotateCcw, RotateCw } from "lucide-react";
 import type { FlashcardProposalViewModel } from "../types";
 
 interface FlashcardListItemProps {
@@ -13,6 +13,7 @@ interface FlashcardListItemProps {
   onEdit: (proposalId: string, editedContent: { front: string; back: string }) => void;
   onAccept: () => void;
   onReject: () => void;
+  onReset?: () => void;
 }
 
 export function FlashcardListItem({
@@ -23,6 +24,7 @@ export function FlashcardListItem({
   onEdit,
   onAccept,
   onReject,
+  onReset,
 }: FlashcardListItemProps) {
   const [editedFront, setEditedFront] = React.useState(proposal.front);
   const [editedBack, setEditedBack] = React.useState(proposal.back);
@@ -56,12 +58,12 @@ export function FlashcardListItem({
   };
 
   return (
-    <Card className={`${getStatusColor()} transition-all`}>
-      <CardContent className="p-4 space-y-4">
+    <Card className={`${getStatusColor()} transition-all h-full flex flex-col`}>
+      <CardContent className="flex-1 p-3 space-y-3">
         {isEditing ? (
           // Edit mode
           <>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label htmlFor={frontId} className="text-sm font-medium">
                 Front
               </label>
@@ -70,12 +72,12 @@ export function FlashcardListItem({
                 value={editedFront}
                 onChange={(e) => setEditedFront(e.target.value)}
                 placeholder="Front side of the flashcard"
-                className="resize-none"
+                className="resize-none h-[60px]"
                 maxLength={200}
               />
               <div className="text-xs text-muted-foreground">{editedFront.length}/200 characters</div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label htmlFor={backId} className="text-sm font-medium">
                 Back
               </label>
@@ -84,7 +86,7 @@ export function FlashcardListItem({
                 value={editedBack}
                 onChange={(e) => setEditedBack(e.target.value)}
                 placeholder="Back side of the flashcard"
-                className="resize-none"
+                className="resize-none h-[60px]"
                 maxLength={500}
               />
               <div className="text-xs text-muted-foreground">{editedBack.length}/500 characters</div>
@@ -94,19 +96,19 @@ export function FlashcardListItem({
           // View mode
           <>
             <div>
-              <div className="font-medium mb-1">Front</div>
-              <div className="text-muted-foreground">{proposal.front}</div>
+              <div className="text-sm font-medium mb-1">Front</div>
+              <div className="text-sm text-muted-foreground line-clamp-3">{proposal.front}</div>
             </div>
             <div>
-              <div className="font-medium mb-1">Back</div>
-              <div className="text-muted-foreground">{proposal.back}</div>
+              <div className="text-sm font-medium mb-1">Back</div>
+              <div className="text-sm text-muted-foreground line-clamp-3">{proposal.back}</div>
             </div>
           </>
         )}
       </CardContent>
 
-      <CardFooter className="px-4 py-3 bg-muted/50 flex justify-between">
-        <div className="flex items-center space-x-2">
+      <CardFooter className="px-3 py-2 bg-muted/50 flex justify-between">
+        <div className="flex items-center gap-1.5">
           {isEditing ? (
             <>
               <Button size="sm" onClick={handleSave} disabled={!editedFront.trim() || !editedBack.trim()}>
@@ -121,31 +123,48 @@ export function FlashcardListItem({
               <Button
                 size="sm"
                 variant={proposal.status === "accepted" ? "default" : "outline"}
-                onClick={onAccept}
-                disabled={proposal.status === "rejected"}
+                onClick={proposal.status === "accepted" ? onReset : onAccept}
+                className="h-7 px-2"
+                title={proposal.status === "accepted" ? "Withdraw acceptance" : "Accept"}
               >
-                <Check className="h-4 w-4 mr-1" />
-                Accept
+                <Check className="h-3.5 w-3.5" />
               </Button>
               <Button
                 size="sm"
                 variant={proposal.status === "rejected" ? "destructive" : "outline"}
-                onClick={onReject}
-                disabled={proposal.status === "accepted"}
+                onClick={proposal.status === "rejected" ? onReset : onReject}
+                className="h-7 px-2"
+                title={proposal.status === "rejected" ? "Withdraw rejection" : "Reject"}
               >
-                <X className="h-4 w-4 mr-1" />
-                Reject
+                <X className="h-3.5 w-3.5" />
               </Button>
+              {onReset && proposal.isEdited && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onReset}
+                  className="h-7 px-2"
+                  title="Reset to original state"
+                >
+                  <RotateCw className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </>
           )}
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1.5">
           {proposal.isEdited && !isEditing && <span className="text-xs text-muted-foreground">Edited</span>}
           {!isEditing && (
-            <Button size="sm" variant="ghost" onClick={onStartEdit} disabled={proposal.status === "rejected"}>
-              <Edit2 className="h-4 w-4 mr-1" />
-              Edit
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onStartEdit}
+              className="h-7 px-2"
+              title="Edit"
+              disabled={proposal.status === "accepted" || proposal.status === "rejected"}
+            >
+              <Edit2 className="h-3.5 w-3.5" />
             </Button>
           )}
           {proposal.isEdited && !isEditing && (
@@ -157,10 +176,11 @@ export function FlashcardListItem({
                 setEditedBack(proposal.originalContent?.back || proposal.back);
                 onStartEdit();
               }}
-              disabled={proposal.status === "rejected"}
+              className="h-7 px-2"
+              title="Restore original content"
+              disabled={proposal.status === "accepted" || proposal.status === "rejected"}
             >
-              <RotateCcw className="h-4 w-4 mr-1" />
-              Restore
+              <RotateCcw className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>

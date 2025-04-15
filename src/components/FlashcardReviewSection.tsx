@@ -25,7 +25,7 @@ export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardRevi
 
   const handleItemAction = React.useCallback(
     (action: {
-      type: "accept" | "reject" | "edit";
+      type: "accept" | "reject" | "edit" | "reset";
       proposalId: string;
       editedContent?: { front: string; back: string };
     }) => {
@@ -49,6 +49,15 @@ export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardRevi
                   front: card.front,
                   back: card.back,
                 },
+              };
+            case "reset":
+              return {
+                ...card,
+                status: "pending" as const,
+                front: card.originalContent?.front || card.front,
+                back: card.originalContent?.back || card.back,
+                isEdited: false,
+                originalContent: undefined,
               };
             default:
               return card;
