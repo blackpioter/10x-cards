@@ -32,25 +32,28 @@
    - ✅ Domyślny status "pending" dla wszystkich fiszek
    - ✅ Walidacja długości tekstu (200/500 znaków)
 
+6. Naprawa błędów linterów:
+   - ✅ Usunięcie nieużywanego parametru `generationId` w `FlashcardReviewSection`
+   - ✅ Przywrócenie i poprawne użycie propa `onBulkAction` w `FlashcardList`
+   - ✅ Dodanie powiązania label-control w `FlashcardListItem`
+   - ✅ Dodanie typów dla odpowiedzi API w `GenerateView`
+   - ✅ Usunięcie użycia `any` w `GenerateView`
+   - ✅ Dodanie walidacji dla `generationId` w `handleComplete`
+
 ## Kolejne kroki
 
-1. Naprawić błędy linterów:
-   - [ ] Usunąć nieużywany parametr `generationId` w `FlashcardReviewSection`
-   - [ ] Usunąć nieużywany prop `onBulkAction` w `FlashcardList`
-   - [ ] Dodać powiązanie label-control w `FlashcardListItem`
+1. Dodanie walidacji dla edge case'ów:
+   - [ ] Sprawdzanie czy `result.flashcard_proposals` istnieje i jest tablicą
+   - [ ] Obsługa pustej tablicy propozycji
+   - [ ] Dodanie komunikatów o błędach dla tych przypadków
 
-2. Dodać testy:
-   - [ ] Testy jednostkowe dla komponentów
-   - [ ] Testy integracyjne dla przepływu generowania
-   - [ ] Testy walidacji
-
-3. Optymalizacje:
-   - [ ] Memoizacja komponentów listy
-   - [ ] Lazy loading dla dużych list
-   - [ ] Optymalizacja rerenderów
-
-4. Dodatkowe funkcje:
+2. Dodatkowe funkcje:
    - [ ] Sortowanie fiszek
    - [ ] Wyszukiwanie w fiszkach
    - [ ] Eksport do różnych formatów
    - [ ] Podgląd w trybie nauki
+
+3. Optymalizacje (na późniejszym etapie):
+   - [ ] Memoizacja komponentów listy
+   - [ ] Lazy loading dla dużych list
+   - [ ] Optymalizacja rerenderów
