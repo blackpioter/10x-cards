@@ -5,6 +5,11 @@ import { GenerationProgress } from "./GenerationProgress";
 import { FlashcardReviewSection } from "./FlashcardReviewSection";
 import { ErrorNotification } from "./ErrorNotification";
 
+interface GenerationResponse {
+  generation_id: string;
+  flashcard_proposals: FlashcardProposalDto[];
+}
+
 export function GenerateView() {
   const [state, setState] = useState<GenerateViewState>({
     stage: "input",
@@ -25,13 +30,13 @@ export function GenerateView() {
         throw new Error("Failed to generate flashcards");
       }
 
-      const result = await response.json();
+      const result = (await response.json()) as GenerationResponse;
       setState((prev) => ({
         ...prev,
         stage: "review",
         generationId: result.generation_id,
         proposals: {
-          proposals: result.flashcard_proposals.map((proposal: FlashcardProposalDto) => ({
+          proposals: result.flashcard_proposals.map((proposal) => ({
             id: crypto.randomUUID(),
             front: proposal.front,
             back: proposal.back,
