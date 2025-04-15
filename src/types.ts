@@ -114,3 +114,47 @@ export interface PaginationDto {
   page: number;
   limit: number;
 }
+
+/* ============================================================
+   View State Types
+   ============================================================ */
+
+export interface FlashcardProposalViewModel {
+  id: string;
+  front: string;
+  back: string;
+  status: "pending" | "accepted" | "rejected";
+  isEdited: boolean;
+  originalContent?: {
+    front: string;
+    back: string;
+  };
+}
+
+export interface FlashcardProposalListViewModel {
+  proposals: FlashcardProposalViewModel[];
+  stats: {
+    total: number;
+    accepted: number;
+    rejected: number;
+    edited: number;
+  };
+}
+
+export interface GenerateViewState {
+  stage: "input" | "generating" | "review";
+  error?: string;
+  generationId?: string;
+  proposals?: FlashcardProposalListViewModel;
+}
+
+export interface ErrorState {
+  type: "validation" | "api" | "network" | "generation";
+  message: string;
+  code?: string;
+  action?: {
+    label: string;
+    handler: () => void;
+  };
+  timestamp?: number;
+}
