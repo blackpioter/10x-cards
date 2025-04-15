@@ -24,7 +24,7 @@ Interfejs użytkownika aplikacji 10x-cards opiera się na centralnym dashboardzi
   - **Ścieżka widoku:** `/generate`
   - **Główny cel:** Umożliwić użytkownikowi wklejenie długiego tekstu i automatyczne wygenerowanie propozycji fiszek, oraz rewizję wygenerowanych fiszek (zaakceptuj, edytuj, odrzuć).
   - **Kluczowe informacje:** Edytor tekstu z licznikiem znaków, liczba wygenerowanych fiszek, komunikaty walidacyjne.
-  - **Kluczowe komponenty:** Formularz wprowadzania tekstu, przycisk generowania, lista lub siatka wyświetlająca propozycje fiszek.
+  - **Kluczowe komponenty:** Formularz wprowadzania tekstu, przycisk generowania, lista lub siatka wyświetlająca propozycje fiszek, przyciski akcji (zapisz wszystkie, zapisz zaakceptowane), wskaźnik ładowania (skeleton), komunikaty o błędach.
   - **Uwagi UX/bezpieczeństwo:** Walidacja długości tekstu, szybkie przetwarzanie AI, przejrzyste komunikaty o błędach.
 
 - **Widok przeglądu i edycji fiszek**
