@@ -41,6 +41,16 @@ export class OpenRouterService {
   private readonly _rateLimitConfig: RateLimitConfig;
   private _rateLimitInfo: RateLimitInfo;
 
+  private readonly _sensitiveFields = [
+    "apiKey",
+    "Authorization",
+    "authorization",
+    "key",
+    "secret",
+    "password",
+    "token",
+  ];
+
   constructor(
     apiKey: string,
     modelName = "openrouter-chat-001",
@@ -53,7 +63,10 @@ export class OpenRouterService {
     }
 
     this._debug = debug;
-    this._log(LogLevel.DEBUG, "Initializing OpenRouter service", { modelName, config });
+    this._log(LogLevel.DEBUG, "Initializing OpenRouter service", {
+      modelName,
+      config: this._sanitizeData(config),
+    });
 
     // Validate config
     const validatedConfig = configSchema.parse(config);
@@ -191,7 +204,7 @@ export class OpenRouterService {
         this._lastResponse = response;
         this._log(LogLevel.INFO, "API call successful", {
           status: response.status,
-          headers: Object.fromEntries(response.headers.entries()),
+          headers: this._sanitizeHeaders(response.headers),
         });
         return response;
       } catch (error) {
@@ -373,6 +386,44 @@ export class OpenRouterService {
     return estimatedTokens;
   }
 
+  private _sanitizeData(data: unknown): unknown {
+    if (!data) return data;
+
+    if (typeof data === "string") {
+      return data;
+    }
+
+    if (Array.isArray(data)) {
+      return data.map((item) => this._sanitizeData(item));
+    }
+
+    if (typeof data === "object") {
+      const sanitized: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(data)) {
+        if (this._sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
+          sanitized[key] = "[REDACTED]";
+        } else {
+          sanitized[key] = this._sanitizeData(value);
+        }
+      }
+      return sanitized;
+    }
+
+    return data;
+  }
+
+  private _sanitizeHeaders(headers: Headers): Record<string, string> {
+    const sanitizedHeaders: Record<string, string> = {};
+    headers.forEach((value, key) => {
+      if (this._sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
+        sanitizedHeaders[key] = "[REDACTED]";
+      } else {
+        sanitizedHeaders[key] = value;
+      }
+    });
+    return sanitizedHeaders;
+  }
+
   private _log(level: LogLevel, message: string, data?: unknown): void {
     if (!this._debug && level === LogLevel.DEBUG) {
       return;
@@ -384,7 +435,7 @@ export class OpenRouterService {
       level,
       service: "OpenRouterService",
       message,
-      ...(data ? { data } : {}),
+      ...(data ? { data: this._sanitizeData(data) } : {}),
     };
 
     switch (level) {
