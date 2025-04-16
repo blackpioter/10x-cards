@@ -51,32 +51,21 @@ export class OpenRouterService {
     "token",
   ];
 
-  constructor(
-    apiKey: string,
-    modelName = "openai/gpt-4o-mini",
-    config: OpenRouterConfig = {},
-    rateLimitConfig: RateLimitConfig = { maxRequestsPerMinute: 60, maxTokensPerMinute: 40000 },
-    debug = false
-  ) {
-    if (!apiKey) {
-      throw new Error("API key is required");
-    }
+  constructor(config: OpenRouterConfig) {
+    // Validate entire configuration
+    const validatedConfig = configSchema.parse(config);
 
-    this._debug = debug;
+    this._debug = validatedConfig.debug;
     this._log(LogLevel.DEBUG, "Initializing OpenRouter service", {
-      modelName,
-      config: this._sanitizeData(config),
+      config: this._sanitizeData(validatedConfig),
     });
 
-    // Validate config
-    const validatedConfig = configSchema.parse(config);
-    this._log(LogLevel.DEBUG, "Config validation successful", validatedConfig);
-
-    this.apiKey = apiKey;
-    this.modelName = modelName;
-    this.baseUrl = validatedConfig.baseUrl || "https://openrouter.ai/api/v1";
-    this._retries = validatedConfig.retries || 3;
-    this._timeout = validatedConfig.timeout || 30000;
+    // Set up connection settings
+    this.apiKey = validatedConfig.apiKey;
+    this.modelName = validatedConfig.model;
+    this.baseUrl = validatedConfig.baseUrl;
+    this._retries = validatedConfig.retries;
+    this._timeout = validatedConfig.timeout;
     this._logger = console;
 
     // Set default model parameters
@@ -87,7 +76,7 @@ export class OpenRouterService {
     this._log(LogLevel.DEBUG, "Default model parameters set", this.modelParams);
 
     // Initialize rate limiting
-    this._rateLimitConfig = rateLimitConfig;
+    this._rateLimitConfig = validatedConfig.rateLimiting;
     this._rateLimitInfo = {
       requestCount: 0,
       tokenCount: 0,

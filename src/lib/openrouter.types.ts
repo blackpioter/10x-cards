@@ -12,10 +12,43 @@ export const modelParametersSchema = z.object({
   max_tokens: z.number().min(1).max(4096).optional(),
 });
 
+// Rate limiting validation
+export const rateLimitConfigSchema = z.object({
+  maxRequestsPerMinute: z.number().min(1).max(100),
+  maxTokensPerMinute: z.number().min(1000).max(100000),
+});
+
+// OpenRouter model validation
+export const openRouterModelSchema = z.string().refine(
+  (model) => {
+    const validPrefixes = ["openai/", "anthropic/", "google/", "meta/", "mistral/", "openrouter/"];
+    return validPrefixes.some((prefix) => model.startsWith(prefix));
+  },
+  {
+    message:
+      "Model name must start with a valid provider prefix (openai/, anthropic/, google/, meta/, mistral/, openrouter/)",
+  }
+);
+
+// Enhanced config schema
 export const configSchema = z.object({
-  baseUrl: z.string().url().optional(),
-  retries: z.number().min(1).max(5).optional(),
-  timeout: z.number().min(1000).max(60000).optional(),
+  // Connection settings
+  baseUrl: z.string().url().optional().default("https://openrouter.ai/api/v1"),
+  apiKey: z.string().min(32).max(256),
+  model: openRouterModelSchema.default("openai/gpt-4"),
+
+  // Request settings
+  retries: z.number().min(1).max(5).optional().default(3),
+  timeout: z.number().min(1000).max(60000).optional().default(30000),
+
+  // Rate limiting settings
+  rateLimiting: rateLimitConfigSchema.optional().default({
+    maxRequestsPerMinute: 60,
+    maxTokensPerMinute: 40000,
+  }),
+
+  // Debug settings
+  debug: z.boolean().optional().default(false),
 });
 
 export const messageSchema = z.string().min(1).max(4096);
@@ -23,6 +56,7 @@ export const messageSchema = z.string().min(1).max(4096);
 export type ChatResponse = z.infer<typeof chatResponseSchema>;
 export type ModelParameters = z.infer<typeof modelParametersSchema>;
 export type OpenRouterConfig = z.infer<typeof configSchema>;
+export type RateLimitConfig = z.infer<typeof rateLimitConfigSchema>;
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -46,12 +80,6 @@ export class OpenRouterError extends Error {
     super(message);
     this.name = "OpenRouterError";
   }
-}
-
-// Rate limiting types
-export interface RateLimitConfig {
-  maxRequestsPerMinute: number;
-  maxTokensPerMinute: number;
 }
 
 export interface RateLimitInfo {
