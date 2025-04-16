@@ -2,7 +2,7 @@ import * as React from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Edit2, RotateCcw, RotateCw } from "lucide-react";
+import { Check, X, Edit2, RotateCcw } from "lucide-react";
 import type { FlashcardProposalViewModel } from "../types";
 
 interface FlashcardListItemProps {
@@ -14,6 +14,7 @@ interface FlashcardListItemProps {
   onAccept: () => void;
   onReject: () => void;
   onReset?: () => void;
+  onRestore?: () => void;
 }
 
 export function FlashcardListItem({
@@ -25,6 +26,7 @@ export function FlashcardListItem({
   onAccept,
   onReject,
   onReset,
+  onRestore,
 }: FlashcardListItemProps) {
   const [editedFront, setEditedFront] = React.useState(proposal.front);
   const [editedBack, setEditedBack] = React.useState(proposal.back);
@@ -138,17 +140,6 @@ export function FlashcardListItem({
               >
                 <X className="h-3.5 w-3.5" />
               </Button>
-              {onReset && proposal.isEdited && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={onReset}
-                  className="h-7 px-2"
-                  title="Reset to original state"
-                >
-                  <RotateCw className="h-3.5 w-3.5" />
-                </Button>
-              )}
             </>
           )}
         </div>
@@ -171,13 +162,9 @@ export function FlashcardListItem({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => {
-                setEditedFront(proposal.originalContent?.front || proposal.front);
-                setEditedBack(proposal.originalContent?.back || proposal.back);
-                onStartEdit();
-              }}
+              onClick={onRestore}
               className="h-7 px-2"
-              title="Restore original content"
+              title="Reset to original content"
               disabled={proposal.status === "accepted" || proposal.status === "rejected"}
             >
               <RotateCcw className="h-3.5 w-3.5" />

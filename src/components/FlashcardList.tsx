@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 interface FlashcardListProps {
   proposals: FlashcardProposalViewModel[];
   onItemAction: (action: {
-    type: "accept" | "reject" | "edit" | "reset";
+    type: "accept" | "reject" | "edit" | "reset" | "restore";
     proposalId: string;
     editedContent?: { front: string; back: string };
   }) => void;
@@ -58,6 +58,16 @@ export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: 
     (proposalId: string) => {
       onItemAction({
         type: "reset",
+        proposalId,
+      });
+    },
+    [onItemAction]
+  );
+
+  const handleRestore = React.useCallback(
+    (proposalId: string) => {
+      onItemAction({
+        type: "restore",
         proposalId,
       });
     },
@@ -116,6 +126,7 @@ export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: 
             onAccept={() => handleAccept(proposal.id)}
             onReject={() => handleReject(proposal.id)}
             onReset={() => handleReset(proposal.id)}
+            onRestore={() => handleRestore(proposal.id)}
           />
         ))}
       </div>
