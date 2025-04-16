@@ -53,7 +53,7 @@ export class OpenRouterService {
 
   constructor(
     apiKey: string,
-    modelName = "openrouter-chat-001",
+    modelName = "openai/gpt-4o-mini",
     config: OpenRouterConfig = {},
     rateLimitConfig: RateLimitConfig = { maxRequestsPerMinute: 60, maxTokensPerMinute: 40000 },
     debug = false
