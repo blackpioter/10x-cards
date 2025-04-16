@@ -2,8 +2,24 @@ import { z } from "zod";
 
 // Response schema validation
 export const chatResponseSchema = z.object({
-  answer: z.string(),
-  references: z.array(z.unknown()),
+  id: z.string(),
+  choices: z.array(
+    z.object({
+      message: z.object({
+        role: z.string(),
+        content: z.string(),
+      }),
+      finish_reason: z.string().nullable(),
+    })
+  ),
+  model: z.string(),
+  usage: z
+    .object({
+      prompt_tokens: z.number(),
+      completion_tokens: z.number(),
+      total_tokens: z.number(),
+    })
+    .optional(),
 });
 
 // Input validation schemas
@@ -51,7 +67,7 @@ export const configSchema = z.object({
   debug: z.boolean().optional().default(false),
 });
 
-export const messageSchema = z.string().min(1).max(4096);
+export const messageSchema = z.string().min(1).max(10000);
 
 export type ChatResponse = z.infer<typeof chatResponseSchema>;
 export type ModelParameters = z.infer<typeof modelParametersSchema>;

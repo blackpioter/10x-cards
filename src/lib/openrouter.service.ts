@@ -55,18 +55,19 @@ export class OpenRouterService {
     // Validate entire configuration
     const validatedConfig = configSchema.parse(config);
 
+    // Set up all required fields first
     this._debug = validatedConfig.debug;
-    this._log(LogLevel.DEBUG, "Initializing OpenRouter service", {
-      config: this._sanitizeData(validatedConfig),
-    });
-
-    // Set up connection settings
+    this._logger = console;
     this.apiKey = validatedConfig.apiKey;
     this.modelName = validatedConfig.model;
     this.baseUrl = validatedConfig.baseUrl;
     this._retries = validatedConfig.retries;
     this._timeout = validatedConfig.timeout;
-    this._logger = console;
+
+    // Now we can start logging
+    this._log(LogLevel.DEBUG, "Initializing OpenRouter service", {
+      config: this._sanitizeData(validatedConfig),
+    });
 
     // Set default model parameters
     this.modelParams = modelParametersSchema.parse({
@@ -163,12 +164,12 @@ export class OpenRouterService {
         const timeoutId = setTimeout(() => controller.abort(), this._timeout);
 
         this._log(LogLevel.DEBUG, "Sending request", {
-          url: `${this.baseUrl}/chat`,
+          url: `${this.baseUrl}/chat/completions`,
           attempt: attempt + 1,
           timeout: this._timeout,
         });
 
-        const response = await fetch(`${this.baseUrl}/chat`, {
+        const response = await fetch(`${this.baseUrl}/chat/completions`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
@@ -242,8 +243,9 @@ export class OpenRouterService {
       this._log(LogLevel.DEBUG, "Parsing response data");
       const parsed = chatResponseSchema.parse(data);
       this._log(LogLevel.DEBUG, "Response parsed successfully", {
-        answerLength: parsed.answer.length,
-        referencesCount: parsed.references.length,
+        choices: parsed.choices.length,
+        model: parsed.model,
+        usage: parsed.usage,
       });
       return parsed;
     } catch (error) {
