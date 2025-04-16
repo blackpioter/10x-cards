@@ -2,7 +2,10 @@ import { DEFAULT_USER_ID, supabaseClient } from "../db/supabase.client";
 import type { FlashcardCreateCommand, FlashcardDto } from "../types";
 
 export class FlashcardsError extends Error {
-  constructor(message: string, public code: number = 500) {
+  constructor(
+    message: string,
+    public code = 500
+  ) {
     super(message);
     this.name = "FlashcardsError";
   }
@@ -18,16 +21,14 @@ export class FlashcardsError extends Error {
 export async function createFlashcards(command: FlashcardCreateCommand): Promise<FlashcardDto[]> {
   console.log("[FlashcardService] Creating flashcards:", {
     count: command.flashcards.length,
-    hasGenerationIds: command.flashcards.some(f => f.generation_id !== null)
+    hasGenerationIds: command.flashcards.some((f) => f.generation_id !== null),
   });
 
   // In development, use the default user ID
   const userId = DEFAULT_USER_ID;
 
   // Verify all generation_ids exist if provided
-  const generationIds = command.flashcards
-    .map((f) => f.generation_id)
-    .filter((id): id is string => id !== null);
+  const generationIds = command.flashcards.map((f) => f.generation_id).filter((id): id is string => id !== null);
 
   if (generationIds.length > 0) {
     console.log("[FlashcardService] Verifying generation IDs:", generationIds);
@@ -46,7 +47,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
     if (!generations || generations.length !== new Set(generationIds).size) {
       console.error("[FlashcardService] Missing generations:", {
         requested: generationIds,
-        found: generations?.map(g => g.id) || []
+        found: generations?.map((g) => g.id) || [],
       });
       throw new FlashcardsError("One or more generation_ids not found", 404);
     }
@@ -61,6 +62,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
       command.flashcards.map((f) => ({
         ...f,
         user_id: userId,
+        status: "accepted",
       }))
     )
     .select();
@@ -77,7 +79,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
 
   console.log("[FlashcardService] Successfully created flashcards:", {
     count: flashcards.length,
-    ids: flashcards.map(f => f.id)
+    ids: flashcards.map((f) => f.id),
   });
 
   return flashcards;
