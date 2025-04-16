@@ -48,7 +48,10 @@ export class OpenRouterService {
     "key",
     "secret",
     "password",
-    "token",
+    "bearer_token",
+    "access_token",
+    "refresh_token",
+    "jwt_token",
   ];
 
   constructor(config: OpenRouterConfig) {
