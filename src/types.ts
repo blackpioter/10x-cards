@@ -72,6 +72,7 @@ export interface GenerateFlashcardsCommand {
 }
 
 export interface FlashcardProposalDto {
+  id: string;
   front: string;
   back: string;
   source: "ai-full" | "ai-edited";

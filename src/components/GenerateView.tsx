@@ -37,7 +37,7 @@ export function GenerateView() {
         generationId: result.generation_id,
         proposals: {
           proposals: result.flashcard_proposals.map((proposal) => ({
-            id: crypto.randomUUID(),
+            id: proposal.id,
             front: proposal.front,
             back: proposal.back,
             status: "pending" as const,
@@ -70,26 +70,50 @@ export function GenerateView() {
     }
 
     try {
-      const response = await fetch("/api/flashcards", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          flashcards: accepted.map((card) => ({
-            front: card.front,
-            back: card.back,
-            source: card.isEdited ? "ai-edited" : "ai-full",
-            generation_id: state.generationId,
-          })),
-        }),
-      });
+      // Get all flashcard IDs that were accepted
+      const acceptedIds = accepted.map((card) => card.id);
 
-      if (!response.ok) {
-        throw new Error("Failed to save flashcards");
+      // Get all flashcard IDs that were rejected (all proposals that weren't accepted)
+      const rejectedIds =
+        state.proposals?.proposals.filter((card) => !acceptedIds.includes(card.id)).map((card) => card.id) || [];
+
+      // Update accepted flashcards
+      if (acceptedIds.length > 0) {
+        const acceptResponse = await fetch("/api/flashcards/status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            flashcard_ids: acceptedIds,
+            status: "accepted",
+          }),
+        });
+
+        if (!acceptResponse.ok) {
+          throw new Error("Failed to update accepted flashcards");
+        }
       }
 
-      // Reset to input stage after successful save
+      // Update rejected flashcards
+      if (rejectedIds.length > 0) {
+        const rejectResponse = await fetch("/api/flashcards/status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            flashcard_ids: rejectedIds,
+            status: "rejected",
+          }),
+        });
+
+        if (!rejectResponse.ok) {
+          throw new Error("Failed to update rejected flashcards");
+        }
+      }
+
+      // Reset to input stage after successful updates
       setState({ stage: "input" });
     } catch (error) {
       setState((prev) => ({

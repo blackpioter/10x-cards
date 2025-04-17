@@ -70,20 +70,29 @@ export class GenerationService {
     generationId: string;
     proposals: FlashcardProposalDto[];
   }) {
-    const { error: flashcardsError } = await supabaseClient.from("flashcards").insert(
-      proposals.map((proposal) => ({
-        user_id: userId,
-        generation_id: generationId,
-        front: proposal.front,
-        back: proposal.back,
-        source: proposal.source,
-        status: "pending",
-      }))
-    );
+    const { data: flashcards, error: flashcardsError } = await supabaseClient
+      .from("flashcards")
+      .insert(
+        proposals.map((proposal) => ({
+          user_id: userId,
+          generation_id: generationId,
+          front: proposal.front,
+          back: proposal.back,
+          source: proposal.source,
+          status: "pending",
+        }))
+      )
+      .select();
 
     if (flashcardsError) {
       throw new Error(`Failed to store flashcards: ${flashcardsError.message}`);
     }
+
+    if (!flashcards) {
+      throw new Error("No flashcards were created");
+    }
+
+    return flashcards;
   }
 
   private async generateFlashcardsWithAI(sourceText: string): Promise<FlashcardProposalDto[]> {
@@ -178,12 +187,20 @@ export class GenerationService {
         generationDuration,
       });
 
-      // Store flashcard proposals
-      await this.saveFlashcards({
+      // Store flashcard proposals and get their IDs
+      const savedFlashcards = await this.saveFlashcards({
         userId,
         generationId: generation.id,
         proposals,
       });
+
+      // Map saved flashcards to proposals with IDs
+      const proposalsWithIds = savedFlashcards.map((flashcard) => ({
+        id: flashcard.id,
+        front: flashcard.front,
+        back: flashcard.back,
+        source: flashcard.source as "ai-full" | "ai-edited",
+      }));
 
       // Log successful generation
       console.log(`Successfully generated ${proposals.length} flashcards for user: ${userId}`);
@@ -192,7 +209,7 @@ export class GenerationService {
 
       return {
         generation_id: generation.id,
-        flashcard_proposals: proposals,
+        flashcard_proposals: proposalsWithIds,
         generated_count: proposals.length,
       };
     } catch (error) {

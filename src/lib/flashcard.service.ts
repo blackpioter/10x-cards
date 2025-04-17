@@ -12,14 +12,78 @@ export class FlashcardsError extends Error {
 }
 
 /**
- * Creates one or more flashcards in a single transaction.
- * Verifies generation_id existence if provided.
+ * Updates status of existing flashcards.
+ *
+ * @throws {FlashcardsError} with code 404 if any flashcard doesn't exist
+ * @throws {FlashcardsError} with code 500 for other errors
+ */
+export async function updateFlashcardsStatus(
+  flashcardIds: string[],
+  status: "accepted" | "rejected"
+): Promise<FlashcardDto[]> {
+  console.log("[FlashcardService] Updating flashcards status:", {
+    count: flashcardIds.length,
+    status,
+  });
+
+  // In development, use the default user ID
+  const userId = DEFAULT_USER_ID;
+
+  // Verify flashcards exist and belong to the user
+  const { data: existingFlashcards, error: verifyError } = await supabaseClient
+    .from("flashcards")
+    .select("id")
+    .in("id", flashcardIds)
+    .eq("user_id", userId);
+
+  if (verifyError) {
+    console.error("[FlashcardService] Error verifying flashcards:", verifyError);
+    throw new FlashcardsError("Error verifying flashcards", 500);
+  }
+
+  if (!existingFlashcards || existingFlashcards.length !== flashcardIds.length) {
+    console.error("[FlashcardService] Missing flashcards:", {
+      requested: flashcardIds,
+      found: existingFlashcards?.map((f) => f.id) || [],
+    });
+    throw new FlashcardsError("One or more flashcards not found", 404);
+  }
+
+  // Update flashcards status
+  const { data: updatedFlashcards, error: updateError } = await supabaseClient
+    .from("flashcards")
+    .update({ status })
+    .in("id", flashcardIds)
+    .eq("user_id", userId)
+    .select();
+
+  if (updateError) {
+    console.error("[FlashcardService] Error updating flashcards:", updateError);
+    throw new FlashcardsError("Error updating flashcards", 500);
+  }
+
+  if (!updatedFlashcards) {
+    console.error("[FlashcardService] No flashcards updated");
+    throw new FlashcardsError("No flashcards updated", 500);
+  }
+
+  console.log("[FlashcardService] Successfully updated flashcards:", {
+    count: updatedFlashcards.length,
+    ids: updatedFlashcards.map((f) => f.id),
+  });
+
+  return updatedFlashcards;
+}
+
+/**
+ * Creates new flashcards in pending state.
+ * Used only for initial creation of AI-generated flashcard proposals.
  *
  * @throws {FlashcardsError} with code 404 if generation_id doesn't exist
  * @throws {FlashcardsError} with code 500 for other errors
  */
 export async function createFlashcards(command: FlashcardCreateCommand): Promise<FlashcardDto[]> {
-  console.log("[FlashcardService] Creating flashcards:", {
+  console.log("[FlashcardService] Creating flashcard proposals:", {
     count: command.flashcards.length,
     hasGenerationIds: command.flashcards.some((f) => f.generation_id !== null),
   });
@@ -53,7 +117,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
     }
   }
 
-  // Create flashcards in a transaction
+  // Create flashcards in pending state
   console.log("[FlashcardService] Creating flashcards in database");
 
   const { data: flashcards, error: insertError } = await supabaseClient
@@ -62,7 +126,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
       command.flashcards.map((f) => ({
         ...f,
         user_id: userId,
-        status: "accepted",
+        status: "pending",
       }))
     )
     .select();
@@ -77,7 +141,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
     throw new FlashcardsError("No flashcards created", 500);
   }
 
-  console.log("[FlashcardService] Successfully created flashcards:", {
+  console.log("[FlashcardService] Successfully created flashcard proposals:", {
     count: flashcards.length,
     ids: flashcards.map((f) => f.id),
   });
