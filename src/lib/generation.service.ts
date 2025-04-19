@@ -1,10 +1,23 @@
 import type { GenerateFlashcardsCommand, GenerationCreateResponseDto, FlashcardProposalDto } from "../types";
 import { createHash } from "crypto";
 import { supabaseClient } from "../db/supabase.client";
-import { OpenRouterService } from "./openrouter.service";
+import { OpenRouterService, LogLevel } from "./openrouter.service";
+
+// Get log level from environment variable, default to INFO if not set
+const LOG_LEVEL = (import.meta.env.LOG_LEVEL || LogLevel.INFO).toLowerCase() as LogLevel;
+
+// Log level hierarchy for filtering
+const LOG_LEVEL_HIERARCHY: Record<LogLevel, number> = {
+  [LogLevel.DEBUG]: 0,
+  [LogLevel.INFO]: 1,
+  [LogLevel.WARN]: 2,
+  [LogLevel.ERROR]: 3,
+};
 
 export class GenerationService {
   private openRouterService: OpenRouterService;
+  private readonly _logger: Console;
+  private readonly _logLevel: LogLevel;
 
   constructor() {
     const apiKey = import.meta.env.OPENROUTER_API_KEY;
@@ -12,12 +25,15 @@ export class GenerationService {
       throw new Error("OPENROUTER_API_KEY environment variable is required");
     }
 
+    this._logLevel = LOG_LEVEL;
+    this._logger = console;
+
     // Initialize OpenRouter service with configuration
     this.openRouterService = new OpenRouterService({
       apiKey,
       model: "openai/gpt-4o-mini",
       baseUrl: "https://openrouter.ai/api/v1",
-      debug: import.meta.env.DEV,
+      logLevel: LOG_LEVEL,
       retries: 2,
       timeout: 60000, // 1 minute (maximum allowed)
       rateLimiting: {
@@ -25,6 +41,37 @@ export class GenerationService {
         maxTokensPerMinute: 10000,
       },
     });
+  }
+
+  private _log(level: LogLevel, message: string, data?: unknown): void {
+    // Only log if the current level is higher or equal to the configured level
+    if (LOG_LEVEL_HIERARCHY[level] < LOG_LEVEL_HIERARCHY[this._logLevel]) {
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+    const logData = {
+      timestamp,
+      level,
+      service: "GenerationService",
+      message,
+      ...(data ? { data } : {}),
+    };
+
+    switch (level) {
+      case LogLevel.DEBUG:
+        this._logger.debug(JSON.stringify(logData));
+        break;
+      case LogLevel.INFO:
+        this._logger.info(JSON.stringify(logData));
+        break;
+      case LogLevel.WARN:
+        this._logger.warn(JSON.stringify(logData));
+        break;
+      case LogLevel.ERROR:
+        this._logger.error(JSON.stringify(logData));
+        break;
+    }
   }
 
   private async saveGenerationMetadata({
@@ -40,6 +87,14 @@ export class GenerationService {
     generatedCount: number;
     generationDuration: number; // duration in milliseconds
   }) {
+    this._log(LogLevel.DEBUG, "Saving generation metadata", {
+      userId,
+      sourceTextLength: sourceText.length,
+      sourceTextHash,
+      generatedCount,
+      generationDuration,
+    });
+
     const { data: generation, error: generationError } = await supabaseClient
       .from("generations")
       .insert({
@@ -55,9 +110,11 @@ export class GenerationService {
       .single();
 
     if (generationError) {
+      this._log(LogLevel.ERROR, "Failed to store generation", { error: generationError.message });
       throw new Error(`Failed to store generation: ${generationError.message}`);
     }
 
+    this._log(LogLevel.INFO, "Successfully saved generation metadata", { generationId: generation.id });
     return generation;
   }
 
@@ -70,6 +127,12 @@ export class GenerationService {
     generationId: string;
     proposals: FlashcardProposalDto[];
   }) {
+    this._log(LogLevel.DEBUG, "Saving flashcard proposals", {
+      userId,
+      generationId,
+      proposalCount: proposals.length,
+    });
+
     const { data: flashcards, error: flashcardsError } = await supabaseClient
       .from("flashcards")
       .insert(
@@ -85,17 +148,22 @@ export class GenerationService {
       .select();
 
     if (flashcardsError) {
+      this._log(LogLevel.ERROR, "Failed to store flashcards", { error: flashcardsError.message });
       throw new Error(`Failed to store flashcards: ${flashcardsError.message}`);
     }
 
     if (!flashcards) {
+      this._log(LogLevel.ERROR, "No flashcards were created");
       throw new Error("No flashcards were created");
     }
 
+    this._log(LogLevel.INFO, "Successfully saved flashcards", { count: flashcards.length });
     return flashcards;
   }
 
   private async generateFlashcardsWithAI(sourceText: string): Promise<FlashcardProposalDto[]> {
+    this._log(LogLevel.INFO, "Starting AI flashcard generation", { textLength: sourceText.length });
+
     // Initialize OpenRouter if not already done
     await this.openRouterService.initialize();
 
@@ -137,6 +205,7 @@ export class GenerationService {
       // Get the content from the first choice's message
       const content = result.choices[0]?.message?.content;
       if (!content) {
+        this._log(LogLevel.ERROR, "No content in AI response");
         throw new Error("No content in AI response");
       }
 
@@ -149,26 +218,32 @@ export class GenerationService {
 
       const flashcards = JSON.parse(cleanContent);
       if (!Array.isArray(flashcards)) {
+        this._log(LogLevel.ERROR, "Invalid response format", { content: cleanContent });
         throw new Error("Invalid response format: expected array of flashcards");
       }
 
       // Transform and validate the response
-      return flashcards.map((card: { front: string; back: string }) => ({
+      const transformedFlashcards = flashcards.map((card: { front: string; back: string }) => ({
         id: "", // This will be replaced with actual ID after saving to database
         front: card.front,
         back: card.back,
         source: "ai-full" as const,
       }));
+
+      this._log(LogLevel.INFO, "Successfully generated flashcards", { count: transformedFlashcards.length });
+      return transformedFlashcards;
     } catch (error) {
-      console.error("Failed to parse AI response:", error);
-      if (error instanceof SyntaxError) {
-        console.error("Raw content:", result.choices[0]?.message?.content);
-      }
+      this._log(LogLevel.ERROR, "Failed to parse AI response", { error, raw: result.choices[0]?.message?.content });
       throw new Error("Failed to generate valid flashcards from AI response");
     }
   }
 
   async generateFlashcards(command: GenerateFlashcardsCommand, userId: string): Promise<GenerationCreateResponseDto> {
+    this._log(LogLevel.INFO, "Starting flashcard generation process", {
+      userId,
+      textLength: command.source_text.length,
+    });
+
     try {
       // Calculate source text hash for logging
       const sourceTextHash = createHash("sha256").update(command.source_text).digest("hex");
@@ -203,10 +278,11 @@ export class GenerationService {
         source: flashcard.source as "ai-full" | "ai-edited",
       }));
 
-      // Log successful generation
-      console.log(`Successfully generated ${proposals.length} flashcards for user: ${userId}`);
-      console.log(`Source text hash: ${sourceTextHash}, length: ${command.source_text.length}`);
-      console.log(`Generation duration: ${generationDuration}ms`);
+      this._log(LogLevel.INFO, "Successfully completed flashcard generation", {
+        generationId: generation.id,
+        flashcardCount: proposalsWithIds.length,
+        duration: generationDuration,
+      });
 
       return {
         generation_id: generation.id,
@@ -214,8 +290,7 @@ export class GenerationService {
         generated_count: proposals.length,
       };
     } catch (error) {
-      // Log error
-      console.error("Error generating flashcards:", error);
+      this._log(LogLevel.ERROR, "Error generating flashcards", { error });
       throw error;
     }
   }

@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+// Log levels enum
+export const enum LogLevel {
+  DEBUG = "debug",
+  INFO = "info",
+  WARN = "warn",
+  ERROR = "error",
+}
+
 // Response schema validation
 export const chatResponseSchema = z.object({
   id: z.string(),
@@ -63,8 +71,8 @@ export const configSchema = z.object({
     maxTokensPerMinute: 40000,
   }),
 
-  // Debug settings
-  debug: z.boolean().optional().default(false),
+  // Logging settings
+  logLevel: z.enum([LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR]).optional().default(LogLevel.INFO),
 });
 
 export const messageSchema = z.string().min(1).max(10000);

@@ -1,5 +1,50 @@
 import { DEFAULT_USER_ID, supabaseClient } from "../db/supabase.client";
 import type { FlashcardCreateCommand, FlashcardDto } from "../types";
+import { LogLevel } from "./openrouter.service";
+
+// Get log level from environment variable, default to INFO if not set
+const LOG_LEVEL = (import.meta.env.LOG_LEVEL || LogLevel.INFO).toLowerCase() as LogLevel;
+
+// Log level hierarchy for filtering
+const LOG_LEVEL_HIERARCHY: Record<LogLevel, number> = {
+  [LogLevel.DEBUG]: 0,
+  [LogLevel.INFO]: 1,
+  [LogLevel.WARN]: 2,
+  [LogLevel.ERROR]: 3,
+};
+
+const _logger = console;
+
+function _log(level: LogLevel, message: string, data?: unknown): void {
+  // Only log if the current level is higher or equal to the configured level
+  if (LOG_LEVEL_HIERARCHY[level] < LOG_LEVEL_HIERARCHY[LOG_LEVEL]) {
+    return;
+  }
+
+  const timestamp = new Date().toISOString();
+  const logData = {
+    timestamp,
+    level,
+    service: "FlashcardService",
+    message,
+    ...(data ? { data } : {}),
+  };
+
+  switch (level) {
+    case LogLevel.DEBUG:
+      _logger.debug(JSON.stringify(logData));
+      break;
+    case LogLevel.INFO:
+      _logger.info(JSON.stringify(logData));
+      break;
+    case LogLevel.WARN:
+      _logger.warn(JSON.stringify(logData));
+      break;
+    case LogLevel.ERROR:
+      _logger.error(JSON.stringify(logData));
+      break;
+  }
+}
 
 export class FlashcardsError extends Error {
   constructor(
@@ -21,7 +66,7 @@ export class FlashcardsError extends Error {
 export async function updateFlashcardsStatus(
   updates: { ids: string[]; status: "accepted" | "rejected" | "pending" }[]
 ): Promise<FlashcardDto[]> {
-  console.log("[FlashcardService] Updating flashcards status:", {
+  _log(LogLevel.INFO, "Updating flashcards status", {
     updates: updates.map((u) => ({ count: u.ids.length, status: u.status })),
   });
 
@@ -39,12 +84,12 @@ export async function updateFlashcardsStatus(
     .eq("user_id", userId);
 
   if (verifyError) {
-    console.error("[FlashcardService] Error verifying flashcards:", verifyError);
+    _log(LogLevel.ERROR, "Error verifying flashcards", { error: verifyError });
     throw new FlashcardsError("Error verifying flashcards", 500);
   }
 
   if (!existingFlashcards || existingFlashcards.length !== allFlashcardIds.length) {
-    console.error("[FlashcardService] Missing flashcards:", {
+    _log(LogLevel.ERROR, "Missing flashcards", {
       requested: allFlashcardIds,
       found: existingFlashcards?.map((f) => f.id) || [],
     });
@@ -53,6 +98,8 @@ export async function updateFlashcardsStatus(
 
   // Update flashcards status in parallel for each status group
   const updatePromises = updates.map(async ({ ids, status }) => {
+    _log(LogLevel.DEBUG, "Updating flashcard batch", { status, count: ids.length });
+
     const { data: updatedFlashcards, error: updateError } = await supabaseClient
       .from("flashcards")
       .update({ status })
@@ -61,6 +108,7 @@ export async function updateFlashcardsStatus(
       .select();
 
     if (updateError) {
+      _log(LogLevel.ERROR, `Error updating flashcards to ${status}`, { error: updateError.message });
       throw new FlashcardsError(`Error updating flashcards to ${status}: ${updateError.message}`, 500);
     }
 
@@ -72,18 +120,18 @@ export async function updateFlashcardsStatus(
     const updatedFlashcards = results.flat().filter((f): f is NonNullable<typeof f> => f !== null);
 
     if (updatedFlashcards.length === 0) {
-      console.error("[FlashcardService] No flashcards updated");
+      _log(LogLevel.ERROR, "No flashcards updated");
       throw new FlashcardsError("No flashcards updated", 500);
     }
 
-    console.log("[FlashcardService] Successfully updated flashcards:", {
+    _log(LogLevel.INFO, "Successfully updated flashcards", {
       count: updatedFlashcards.length,
       byStatus: updates.map((u) => `${u.status}: ${u.ids.length}`),
     });
 
     return updatedFlashcards;
   } catch (error) {
-    console.error("[FlashcardService] Error in batch update:", error);
+    _log(LogLevel.ERROR, "Error in batch update", { error });
     throw error instanceof FlashcardsError ? error : new FlashcardsError("Error updating flashcards", 500);
   }
 }
@@ -96,7 +144,7 @@ export async function updateFlashcardsStatus(
  * @throws {FlashcardsError} with code 500 for other errors
  */
 export async function createFlashcards(command: FlashcardCreateCommand): Promise<FlashcardDto[]> {
-  console.log("[FlashcardService] Creating flashcard proposals:", {
+  _log(LogLevel.INFO, "Creating flashcard proposals", {
     count: command.flashcards.length,
     hasGenerationIds: command.flashcards.some((f) => f.generation_id !== null),
   });
@@ -108,7 +156,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
   const generationIds = command.flashcards.map((f) => f.generation_id).filter((id): id is string => id !== null);
 
   if (generationIds.length > 0) {
-    console.log("[FlashcardService] Verifying generation IDs:", generationIds);
+    _log(LogLevel.DEBUG, "Verifying generation IDs", { generationIds });
 
     const { data: generations, error: generationsError } = await supabaseClient
       .from("generations")
@@ -117,12 +165,12 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
       .eq("user_id", userId);
 
     if (generationsError) {
-      console.error("[FlashcardService] Error verifying generations:", generationsError);
+      _log(LogLevel.ERROR, "Error verifying generations", { error: generationsError });
       throw new FlashcardsError("Error verifying generations", 500);
     }
 
     if (!generations || generations.length !== new Set(generationIds).size) {
-      console.error("[FlashcardService] Missing generations:", {
+      _log(LogLevel.ERROR, "Missing generations", {
         requested: generationIds,
         found: generations?.map((g) => g.id) || [],
       });
@@ -131,7 +179,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
   }
 
   // Create flashcards in pending state
-  console.log("[FlashcardService] Creating flashcards in database");
+  _log(LogLevel.DEBUG, "Creating flashcards in database");
 
   const { data: flashcards, error: insertError } = await supabaseClient
     .from("flashcards")
@@ -145,16 +193,16 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
     .select();
 
   if (insertError) {
-    console.error("[FlashcardService] Error inserting flashcards:", insertError);
+    _log(LogLevel.ERROR, "Error inserting flashcards", { error: insertError });
     throw new FlashcardsError("Error creating flashcards", 500);
   }
 
   if (!flashcards) {
-    console.error("[FlashcardService] No flashcards created");
+    _log(LogLevel.ERROR, "No flashcards created");
     throw new FlashcardsError("No flashcards created", 500);
   }
 
-  console.log("[FlashcardService] Successfully created flashcard proposals:", {
+  _log(LogLevel.INFO, "Successfully created flashcard proposals", {
     count: flashcards.length,
     ids: flashcards.map((f) => f.id),
   });

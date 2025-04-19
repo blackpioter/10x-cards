@@ -1,11 +1,11 @@
 import type {
-  OpenRouterConfig,
   ModelParameters,
   ChatMessage,
   ChatResponse,
   APIErrorResponse,
   RateLimitConfig,
   RateLimitInfo,
+  OpenRouterConfig,
 } from "./openrouter.types";
 
 import {
@@ -14,15 +14,19 @@ import {
   modelParametersSchema,
   configSchema,
   messageSchema,
+  LogLevel,
 } from "./openrouter.types";
 
-// Debug log levels
-const enum LogLevel {
-  DEBUG = "debug",
-  INFO = "info",
-  WARN = "warn",
-  ERROR = "error",
-}
+// Get log level from environment variable, default to INFO if not set
+const LOG_LEVEL = (import.meta.env.LOG_LEVEL || LogLevel.INFO).toLowerCase() as LogLevel;
+
+// Log level hierarchy for filtering
+const LOG_LEVEL_HIERARCHY: Record<LogLevel, number> = {
+  [LogLevel.DEBUG]: 0,
+  [LogLevel.INFO]: 1,
+  [LogLevel.WARN]: 2,
+  [LogLevel.ERROR]: 3,
+};
 
 export class OpenRouterService {
   private readonly apiKey: string;
@@ -35,7 +39,7 @@ export class OpenRouterService {
   private readonly _timeout: number;
   private readonly _logger: Console;
   private _lastResponse?: Response;
-  private readonly _debug: boolean;
+  private readonly _logLevel: LogLevel;
 
   // Rate limiting
   private readonly _rateLimitConfig: RateLimitConfig;
@@ -55,12 +59,14 @@ export class OpenRouterService {
   ];
 
   constructor(config: OpenRouterConfig) {
-    // Validate entire configuration
+    // Set up logging first so we can use it during validation
+    this._logLevel = config.logLevel || LOG_LEVEL;
+    this._logger = console;
+
+    // Validate configuration
     const validatedConfig = configSchema.parse(config);
 
-    // Set up all required fields first
-    this._debug = validatedConfig.debug;
-    this._logger = console;
+    // Set up all required fields
     this.apiKey = validatedConfig.apiKey;
     this.modelName = validatedConfig.model;
     this.baseUrl = validatedConfig.baseUrl;
@@ -419,7 +425,8 @@ export class OpenRouterService {
   }
 
   private _log(level: LogLevel, message: string, data?: unknown): void {
-    if (!this._debug && level === LogLevel.DEBUG) {
+    // Only log if the current level is higher or equal to the configured level
+    if (LOG_LEVEL_HIERARCHY[level] < LOG_LEVEL_HIERARCHY[this._logLevel]) {
       return;
     }
 
