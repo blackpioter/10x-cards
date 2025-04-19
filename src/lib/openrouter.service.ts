@@ -16,7 +16,7 @@ import {
   messageSchema,
 } from "./openrouter.types";
 
-import { LogLevel, LOG_LEVEL, LOG_LEVEL_HIERARCHY } from "./logging.types";
+import { LoggingService } from "./logging.service";
 
 export class OpenRouterService {
   private readonly apiKey: string;
@@ -27,9 +27,8 @@ export class OpenRouterService {
   private userMessage?: string;
   private readonly _retries: number;
   private readonly _timeout: number;
-  private readonly _logger: Console;
+  private readonly _logger: LoggingService;
   private _lastResponse?: Response;
-  private readonly _logLevel: LogLevel;
 
   // Rate limiting
   private readonly _rateLimitConfig: RateLimitConfig;
@@ -50,8 +49,7 @@ export class OpenRouterService {
 
   constructor(config: OpenRouterConfig) {
     // Set up logging first so we can use it during validation
-    this._logLevel = config.logLevel || LOG_LEVEL;
-    this._logger = console;
+    this._logger = new LoggingService({ serviceName: "OpenRouterService" });
 
     // Validate configuration
     const validatedConfig = configSchema.parse(config);
@@ -64,7 +62,7 @@ export class OpenRouterService {
     this._timeout = validatedConfig.timeout;
 
     // Now we can start logging
-    this._log(LogLevel.DEBUG, "Initializing OpenRouter service", {
+    this._logger.debug("Initializing OpenRouter service", {
       config: this._sanitizeData(validatedConfig),
     });
 
@@ -73,7 +71,7 @@ export class OpenRouterService {
       temperature: 0.7,
       max_tokens: 150,
     });
-    this._log(LogLevel.DEBUG, "Default model parameters set", this.modelParams);
+    this._logger.debug("Default model parameters set", this.modelParams);
 
     // Initialize rate limiting
     this._rateLimitConfig = validatedConfig.rateLimiting;
@@ -82,7 +80,7 @@ export class OpenRouterService {
       tokenCount: 0,
       lastResetTime: Date.now(),
     };
-    this._log(LogLevel.DEBUG, "Rate limiting initialized", {
+    this._logger.debug("Rate limiting initialized", {
       config: this._rateLimitConfig,
       info: this._rateLimitInfo,
     });
@@ -90,10 +88,10 @@ export class OpenRouterService {
 
   // Initialize logger and verify configuration
   public async initialize(): Promise<void> {
-    this._log(LogLevel.INFO, "Starting service initialization");
+    this._logger.info("Starting service initialization");
     try {
       // Verify API connection
-      this._log(LogLevel.DEBUG, "Verifying API connection", { url: `${this.baseUrl}/health` });
+      this._logger.debug("Verifying API connection", { url: `${this.baseUrl}/health` });
       const response = await fetch(`${this.baseUrl}/health`, {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
@@ -101,51 +99,51 @@ export class OpenRouterService {
       });
 
       if (!response.ok) {
-        this._log(LogLevel.ERROR, "API health check failed", {
+        this._logger.error("API health check failed", {
           status: response.status,
           statusText: response.statusText,
         });
         throw new Error("Failed to initialize OpenRouter service");
       }
 
-      this._log(LogLevel.INFO, "OpenRouter service initialized successfully");
+      this._logger.info("OpenRouter service initialized successfully");
     } catch (error) {
-      this._log(LogLevel.ERROR, "Service initialization failed", { error });
+      this._logger.error("Service initialization failed", { error });
       throw error;
     }
   }
 
   // Public methods for message handling
   public setSystemMessage(message: string): void {
-    this._log(LogLevel.DEBUG, "Setting system message", { length: message.length });
+    this._logger.debug("Setting system message", { length: message.length });
     const validatedMessage = messageSchema.parse(message);
     this.systemMessage = validatedMessage;
-    this._log(LogLevel.DEBUG, "System message set successfully");
+    this._logger.debug("System message set successfully");
   }
 
   public setUserMessage(message: string): void {
-    this._log(LogLevel.DEBUG, "Setting user message", { length: message.length });
+    this._logger.debug("Setting user message", { length: message.length });
     const validatedMessage = messageSchema.parse(message);
     this.userMessage = validatedMessage;
-    this._log(LogLevel.DEBUG, "User message set successfully");
+    this._logger.debug("User message set successfully");
   }
 
   public setModelParameters(params: ModelParameters): void {
-    this._log(LogLevel.DEBUG, "Setting model parameters", params);
+    this._logger.debug("Setting model parameters", params);
     const validatedParams = modelParametersSchema.parse(params);
     this.modelParams = {
       ...this.modelParams,
       ...validatedParams,
     };
-    this._log(LogLevel.DEBUG, "Model parameters updated", this.modelParams);
+    this._logger.debug("Model parameters updated", this.modelParams);
   }
 
   public async callAPI(): Promise<Response> {
-    this._log(LogLevel.INFO, "Starting API call");
+    this._logger.info("Starting API call");
 
     // Check rate limits
     await this._checkRateLimits();
-    this._log(LogLevel.DEBUG, "Rate limits checked successfully");
+    this._logger.debug("Rate limits checked successfully");
 
     let attempt = 0;
     let lastError: Error | null = null;
@@ -153,7 +151,7 @@ export class OpenRouterService {
     while (attempt < this._retries) {
       try {
         const payload = this._preparePayload();
-        this._log(LogLevel.DEBUG, "Request payload prepared", {
+        this._logger.debug("Request payload prepared", {
           model: payload.model,
           messageCount: payload.messages.length,
           totalTokens: this._estimateTokens(),
@@ -162,7 +160,7 @@ export class OpenRouterService {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this._timeout);
 
-        this._log(LogLevel.DEBUG, "Sending request", {
+        this._logger.debug("Sending request", {
           url: `${this.baseUrl}/chat/completions`,
           attempt: attempt + 1,
           timeout: this._timeout,
@@ -182,23 +180,23 @@ export class OpenRouterService {
 
         if (!response.ok) {
           const errorData = (await response.json()) as APIErrorResponse;
-          this._log(LogLevel.ERROR, "API request failed", errorData);
+          this._logger.error("API request failed", errorData);
           throw new OpenRouterError(errorData.error.message, errorData.error.type, errorData.error.code);
         }
 
         // Update rate limit info
         this._updateRateLimits();
-        this._log(LogLevel.DEBUG, "Rate limits updated", this._rateLimitInfo);
+        this._logger.debug("Rate limits updated", this._rateLimitInfo);
 
         this._lastResponse = response;
-        this._log(LogLevel.INFO, "API call successful", {
+        this._logger.info("API call successful", {
           status: response.status,
           headers: this._sanitizeHeaders(response.headers),
         });
         return response;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        this._log(LogLevel.ERROR, "API call attempt failed", {
+        this._logger.error("API call attempt failed", {
           attempt: attempt + 1,
           error: lastError.message,
         });
@@ -206,7 +204,7 @@ export class OpenRouterService {
         if (error instanceof OpenRouterError) {
           // Don't retry on authentication or validation errors
           if (error.code === "auth_error" || error.code === "validation_error") {
-            this._log(LogLevel.ERROR, "Non-retryable error encountered", {
+            this._logger.error("Non-retryable error encountered", {
               type: error.type,
               code: error.code,
             });
@@ -217,7 +215,7 @@ export class OpenRouterService {
         attempt++;
         if (attempt < this._retries) {
           const backoffTime = Math.pow(2, attempt) * 1000;
-          this._log(LogLevel.WARN, "Retrying request", {
+          this._logger.warn("Retrying request", {
             nextAttempt: attempt + 1,
             backoffTime,
           });
@@ -230,35 +228,35 @@ export class OpenRouterService {
   }
 
   public async getResponse(): Promise<ChatResponse> {
-    this._log(LogLevel.DEBUG, "Getting response");
+    this._logger.debug("Getting response");
 
     if (!this._lastResponse) {
-      this._log(LogLevel.ERROR, "No API call has been made yet");
+      this._logger.error("No API call has been made yet");
       throw new Error("No API call has been made yet");
     }
 
     try {
       const data = await this._lastResponse.json();
-      this._log(LogLevel.DEBUG, "Parsing response data");
+      this._logger.debug("Parsing response data");
       const parsed = chatResponseSchema.parse(data);
-      this._log(LogLevel.DEBUG, "Response parsed successfully", {
+      this._logger.debug("Response parsed successfully", {
         choices: parsed.choices.length,
         model: parsed.model,
         usage: parsed.usage,
       });
       return parsed;
     } catch (error) {
-      this._log(LogLevel.ERROR, "Failed to parse response", { error });
+      this._logger.error("Failed to parse response", { error });
       throw this._processError(error);
     }
   }
 
   // Private utility methods
   private _preparePayload(): { model: string; messages: ChatMessage[]; temperature?: number; max_tokens?: number } {
-    this._log(LogLevel.DEBUG, "Preparing payload");
+    this._logger.debug("Preparing payload");
 
     if (!this.userMessage) {
-      this._log(LogLevel.ERROR, "User message is required");
+      this._logger.error("User message is required");
       throw new Error("User message is required");
     }
 
@@ -282,7 +280,7 @@ export class OpenRouterService {
       ...this.modelParams,
     };
 
-    this._log(LogLevel.DEBUG, "Payload prepared", {
+    this._logger.debug("Payload prepared", {
       model: payload.model,
       messageCount: messages.length,
       params: this.modelParams,
@@ -292,10 +290,10 @@ export class OpenRouterService {
   }
 
   private _processError(error: unknown): OpenRouterError {
-    this._log(LogLevel.DEBUG, "Processing error", { error });
+    this._logger.debug("Processing error", { error });
 
     if (error instanceof OpenRouterError) {
-      this._log(LogLevel.ERROR, `OpenRouter API Error: ${error.message}`, {
+      this._logger.error(`OpenRouter API Error: ${error.message}`, {
         type: error.type,
         code: error.code,
       });
@@ -303,20 +301,20 @@ export class OpenRouterService {
     }
 
     const message = error instanceof Error ? error.message : String(error);
-    this._log(LogLevel.ERROR, "OpenRouter Service Error:", message);
+    this._logger.error("OpenRouter Service Error:", message);
 
     return new OpenRouterError(message, "service_error", "unknown_error");
   }
 
   private async _checkRateLimits(): Promise<void> {
-    this._log(LogLevel.DEBUG, "Checking rate limits", this._rateLimitInfo);
+    this._logger.debug("Checking rate limits", this._rateLimitInfo);
 
     const now = Date.now();
     const minuteInMs = 60 * 1000;
 
     // Reset counters if a minute has passed
     if (now - this._rateLimitInfo.lastResetTime >= minuteInMs) {
-      this._log(LogLevel.DEBUG, "Resetting rate limit counters");
+      this._logger.debug("Resetting rate limit counters");
       this._rateLimitInfo = {
         requestCount: 0,
         tokenCount: 0,
@@ -327,7 +325,7 @@ export class OpenRouterService {
     // Check limits
     if (this._rateLimitInfo.requestCount >= this._rateLimitConfig.maxRequestsPerMinute) {
       const waitTime = minuteInMs - (now - this._rateLimitInfo.lastResetTime);
-      this._log(LogLevel.WARN, "Request rate limit exceeded", {
+      this._logger.warn("Request rate limit exceeded", {
         current: this._rateLimitInfo.requestCount,
         max: this._rateLimitConfig.maxRequestsPerMinute,
         waitTime,
@@ -341,7 +339,7 @@ export class OpenRouterService {
 
     if (this._rateLimitInfo.tokenCount >= this._rateLimitConfig.maxTokensPerMinute) {
       const waitTime = minuteInMs - (now - this._rateLimitInfo.lastResetTime);
-      this._log(LogLevel.WARN, "Token rate limit exceeded", {
+      this._logger.warn("Token rate limit exceeded", {
         current: this._rateLimitInfo.tokenCount,
         max: this._rateLimitConfig.maxTokensPerMinute,
         waitTime,
@@ -353,17 +351,17 @@ export class OpenRouterService {
       );
     }
 
-    this._log(LogLevel.DEBUG, "Rate limits check passed");
+    this._logger.debug("Rate limits check passed");
   }
 
   private _updateRateLimits(): void {
-    this._log(LogLevel.DEBUG, "Updating rate limits", this._rateLimitInfo);
+    this._logger.debug("Updating rate limits", this._rateLimitInfo);
 
     this._rateLimitInfo.requestCount++;
     const estimatedTokens = this._estimateTokens();
     this._rateLimitInfo.tokenCount += estimatedTokens;
 
-    this._log(LogLevel.DEBUG, "Rate limits updated", {
+    this._logger.debug("Rate limits updated", {
       newRequestCount: this._rateLimitInfo.requestCount,
       newTokenCount: this._rateLimitInfo.tokenCount,
       addedTokens: estimatedTokens,
@@ -372,7 +370,7 @@ export class OpenRouterService {
 
   private _estimateTokens(): number {
     const estimatedTokens = Math.ceil((this.systemMessage?.length || 0) / 4 + (this.userMessage?.length || 0) / 4);
-    this._log(LogLevel.DEBUG, "Estimated tokens", { estimatedTokens });
+    this._logger.debug("Estimated tokens", { estimatedTokens });
     return estimatedTokens;
   }
 
@@ -412,36 +410,5 @@ export class OpenRouterService {
       }
     });
     return sanitizedHeaders;
-  }
-
-  private _log(level: LogLevel, message: string, data?: unknown): void {
-    // Only log if the current level is higher or equal to the configured level
-    if (LOG_LEVEL_HIERARCHY[level] < LOG_LEVEL_HIERARCHY[this._logLevel]) {
-      return;
-    }
-
-    const timestamp = new Date().toISOString();
-    const logData = {
-      timestamp,
-      level,
-      service: "OpenRouterService",
-      message,
-      ...(data ? { data: this._sanitizeData(data) } : {}),
-    };
-
-    switch (level) {
-      case LogLevel.DEBUG:
-        this._logger.debug(JSON.stringify(logData));
-        break;
-      case LogLevel.INFO:
-        this._logger.info(JSON.stringify(logData));
-        break;
-      case LogLevel.WARN:
-        this._logger.warn(JSON.stringify(logData));
-        break;
-      case LogLevel.ERROR:
-        this._logger.error(JSON.stringify(logData));
-        break;
-    }
   }
 }

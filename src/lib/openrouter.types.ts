@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { LogLevel } from "./logging.types";
 
 // Response schema validation
 export const chatResponseSchema = z.object({
@@ -63,9 +62,6 @@ export const configSchema = z.object({
     maxRequestsPerMinute: 60,
     maxTokensPerMinute: 40000,
   }),
-
-  // Logging settings
-  logLevel: z.enum([LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR]).optional().default(LogLevel.INFO),
 });
 
 export const messageSchema = z.string().min(1).max(10000);
