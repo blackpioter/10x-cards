@@ -69,7 +69,7 @@ export async function updateFlashcardsStatus(
 
   try {
     const results = await Promise.all(updatePromises);
-    const updatedFlashcards = results.flat().filter((f): f is FlashcardDto => f !== null);
+    const updatedFlashcards = results.flat().filter((f): f is NonNullable<typeof f> => f !== null);
 
     if (updatedFlashcards.length === 0) {
       console.error("[FlashcardService] No flashcards updated");

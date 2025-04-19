@@ -154,6 +154,7 @@ export class GenerationService {
 
       // Transform and validate the response
       return flashcards.map((card: { front: string; back: string }) => ({
+        id: "", // This will be replaced with actual ID after saving to database
         front: card.front,
         back: card.back,
         source: "ai-full" as const,
