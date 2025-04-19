@@ -13,27 +13,29 @@ export class FlashcardsError extends Error {
 
 /**
  * Updates status of existing flashcards.
+ * Allows updating different flashcards with different statuses in a single operation.
  *
  * @throws {FlashcardsError} with code 404 if any flashcard doesn't exist
  * @throws {FlashcardsError} with code 500 for other errors
  */
 export async function updateFlashcardsStatus(
-  flashcardIds: string[],
-  status: "accepted" | "rejected"
+  updates: { ids: string[]; status: "accepted" | "rejected" | "pending" }[]
 ): Promise<FlashcardDto[]> {
   console.log("[FlashcardService] Updating flashcards status:", {
-    count: flashcardIds.length,
-    status,
+    updates: updates.map((u) => ({ count: u.ids.length, status: u.status })),
   });
 
   // In development, use the default user ID
   const userId = DEFAULT_USER_ID;
 
+  // Get all flashcard IDs being updated
+  const allFlashcardIds = updates.flatMap((u) => u.ids);
+
   // Verify flashcards exist and belong to the user
   const { data: existingFlashcards, error: verifyError } = await supabaseClient
     .from("flashcards")
     .select("id")
-    .in("id", flashcardIds)
+    .in("id", allFlashcardIds)
     .eq("user_id", userId);
 
   if (verifyError) {
@@ -41,38 +43,49 @@ export async function updateFlashcardsStatus(
     throw new FlashcardsError("Error verifying flashcards", 500);
   }
 
-  if (!existingFlashcards || existingFlashcards.length !== flashcardIds.length) {
+  if (!existingFlashcards || existingFlashcards.length !== allFlashcardIds.length) {
     console.error("[FlashcardService] Missing flashcards:", {
-      requested: flashcardIds,
+      requested: allFlashcardIds,
       found: existingFlashcards?.map((f) => f.id) || [],
     });
     throw new FlashcardsError("One or more flashcards not found", 404);
   }
 
-  // Update flashcards status
-  const { data: updatedFlashcards, error: updateError } = await supabaseClient
-    .from("flashcards")
-    .update({ status })
-    .in("id", flashcardIds)
-    .eq("user_id", userId)
-    .select();
+  // Update flashcards status in parallel for each status group
+  const updatePromises = updates.map(async ({ ids, status }) => {
+    const { data: updatedFlashcards, error: updateError } = await supabaseClient
+      .from("flashcards")
+      .update({ status })
+      .in("id", ids)
+      .eq("user_id", userId)
+      .select();
 
-  if (updateError) {
-    console.error("[FlashcardService] Error updating flashcards:", updateError);
-    throw new FlashcardsError("Error updating flashcards", 500);
-  }
+    if (updateError) {
+      throw new FlashcardsError(`Error updating flashcards to ${status}: ${updateError.message}`, 500);
+    }
 
-  if (!updatedFlashcards) {
-    console.error("[FlashcardService] No flashcards updated");
-    throw new FlashcardsError("No flashcards updated", 500);
-  }
-
-  console.log("[FlashcardService] Successfully updated flashcards:", {
-    count: updatedFlashcards.length,
-    ids: updatedFlashcards.map((f) => f.id),
+    return updatedFlashcards;
   });
 
-  return updatedFlashcards;
+  try {
+    const results = await Promise.all(updatePromises);
+    const updatedFlashcards = results.flat().filter((f): f is FlashcardDto => f !== null);
+
+    if (updatedFlashcards.length === 0) {
+      console.error("[FlashcardService] No flashcards updated");
+      throw new FlashcardsError("No flashcards updated", 500);
+    }
+
+    console.log("[FlashcardService] Successfully updated flashcards:", {
+      count: updatedFlashcards.length,
+      byStatus: updates.map((u) => `${u.status}: ${u.ids.length}`),
+    });
+
+    return updatedFlashcards;
+  } catch (error) {
+    console.error("[FlashcardService] Error in batch update:", error);
+    throw error instanceof FlashcardsError ? error : new FlashcardsError("Error updating flashcards", 500);
+  }
 }
 
 /**
