@@ -1,12 +1,5 @@
 import { z } from "zod";
-
-// Log levels enum
-export const enum LogLevel {
-  DEBUG = "debug",
-  INFO = "info",
-  WARN = "warn",
-  ERROR = "error",
-}
+import { LogLevel } from "./logging.types";
 
 // Response schema validation
 export const chatResponseSchema = z.object({

@@ -1,17 +1,6 @@
 import { DEFAULT_USER_ID, supabaseClient } from "../db/supabase.client";
 import type { FlashcardCreateCommand, FlashcardDto } from "../types";
-import { LogLevel } from "./openrouter.service";
-
-// Get log level from environment variable, default to INFO if not set
-const LOG_LEVEL = (import.meta.env.LOG_LEVEL || LogLevel.INFO).toLowerCase() as LogLevel;
-
-// Log level hierarchy for filtering
-const LOG_LEVEL_HIERARCHY: Record<LogLevel, number> = {
-  [LogLevel.DEBUG]: 0,
-  [LogLevel.INFO]: 1,
-  [LogLevel.WARN]: 2,
-  [LogLevel.ERROR]: 3,
-};
+import { LogLevel, LOG_LEVEL, LOG_LEVEL_HIERARCHY } from "./logging.types";
 
 const _logger = console;
 

@@ -14,19 +14,9 @@ import {
   modelParametersSchema,
   configSchema,
   messageSchema,
-  LogLevel,
 } from "./openrouter.types";
 
-// Get log level from environment variable, default to INFO if not set
-const LOG_LEVEL = (import.meta.env.LOG_LEVEL || LogLevel.INFO).toLowerCase() as LogLevel;
-
-// Log level hierarchy for filtering
-const LOG_LEVEL_HIERARCHY: Record<LogLevel, number> = {
-  [LogLevel.DEBUG]: 0,
-  [LogLevel.INFO]: 1,
-  [LogLevel.WARN]: 2,
-  [LogLevel.ERROR]: 3,
-};
+import { LogLevel, LOG_LEVEL, LOG_LEVEL_HIERARCHY } from "./logging.types";
 
 export class OpenRouterService {
   private readonly apiKey: string;
