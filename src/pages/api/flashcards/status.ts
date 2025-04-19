@@ -4,8 +4,8 @@ import { FlashcardsError, updateFlashcardsStatus } from "../../../lib/flashcard.
 
 // Validation schema
 const updateStatusSchema = z.object({
-  status: z.enum(["accepted", "rejected"], {
-    errorMap: () => ({ message: "Status must be either 'accepted' or 'rejected'" }),
+  status: z.enum(["accepted", "rejected", "pending"], {
+    errorMap: () => ({ message: "Status must be either 'accepted', 'rejected', or 'pending'" }),
   }),
   flashcard_ids: z.array(z.string().uuid("Invalid flashcard ID format")).min(1),
 });
@@ -34,7 +34,12 @@ export const POST: APIRoute = async ({ request }) => {
     const { status, flashcard_ids } = validationResult.data;
 
     // Update flashcards status using the service
-    const flashcards = await updateFlashcardsStatus(flashcard_ids, status);
+    const flashcards = await updateFlashcardsStatus([
+      {
+        ids: flashcard_ids,
+        status,
+      },
+    ]);
 
     return new Response(
       JSON.stringify({

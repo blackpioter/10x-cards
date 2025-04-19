@@ -5,7 +5,7 @@ import { FlashcardList } from "./FlashcardList";
 
 interface FlashcardReviewSectionProps {
   flashcards: FlashcardProposalViewModel[];
-  onComplete: (accepted: FlashcardProposalViewModel[]) => void;
+  onComplete: (proposals: FlashcardProposalViewModel[]) => void;
 }
 
 export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardReviewSectionProps) {
@@ -82,8 +82,7 @@ export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardRevi
           }))
         );
       } else if (action === "save-accepted") {
-        const acceptedCards = proposals.filter((card) => card.status === "accepted");
-        onComplete(acceptedCards);
+        onComplete(proposals);
       }
     },
     [proposals, onComplete]

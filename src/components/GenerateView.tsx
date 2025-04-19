@@ -60,7 +60,7 @@ export function GenerateView() {
     }
   };
 
-  const handleComplete = async (accepted: FlashcardProposalViewModel[]) => {
+  const handleComplete = async (proposals: FlashcardProposalViewModel[]) => {
     if (!state.generationId) {
       setState((prev) => ({
         ...prev,
@@ -70,12 +70,10 @@ export function GenerateView() {
     }
 
     try {
-      // Get all flashcard IDs that were accepted
-      const acceptedIds = accepted.map((card) => card.id);
-
-      // Get all flashcard IDs that were rejected (all proposals that weren't accepted)
-      const rejectedIds =
-        state.proposals?.proposals.filter((card) => !acceptedIds.includes(card.id)).map((card) => card.id) || [];
+      // Group flashcards by their current status
+      const acceptedIds = proposals.filter((card) => card.status === "accepted").map((card) => card.id);
+      const rejectedIds = proposals.filter((card) => card.status === "rejected").map((card) => card.id);
+      const pendingIds = proposals.filter((card) => card.status === "pending").map((card) => card.id);
 
       // Update accepted flashcards
       if (acceptedIds.length > 0) {
@@ -110,6 +108,24 @@ export function GenerateView() {
 
         if (!rejectResponse.ok) {
           throw new Error("Failed to update rejected flashcards");
+        }
+      }
+
+      // Update pending flashcards
+      if (pendingIds.length > 0) {
+        const pendingResponse = await fetch("/api/flashcards/status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            flashcard_ids: pendingIds,
+            status: "pending",
+          }),
+        });
+
+        if (!pendingResponse.ok) {
+          throw new Error("Failed to update pending flashcards");
         }
       }
 
