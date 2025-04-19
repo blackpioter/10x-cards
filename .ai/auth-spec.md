@@ -41,6 +41,8 @@
   - `/api/auth/logout` – wylogowywanie
   - `/api/auth/forgot-password` – wysyłanie linku do odzyskiwania hasła
   - `/api/auth/reset-password` – resetowanie hasła przy użyciu tokenu
+  - `/api/auth/update-account` – umożliwia zmianę hasła oraz aktualizację danych użytkownika (np. edycję profilu, w tym zmianę hasła)
+  - `/api/auth/delete-account` – umożliwia bezpieczne usunięcie konta użytkownika wraz z powiązanymi danymi (zgodnie z RODO)
 - Endpointy będą implementowane przy użyciu funkcji Astro API, obsługujących metody HTTP (POST, GET) oraz współpracujących ze strukturą API opisaną w `astro.config.mjs`.
 
 ### b. Modele danych i walidacja
