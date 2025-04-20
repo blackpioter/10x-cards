@@ -1,6 +1,22 @@
 ---
 import AuthLayout from "../layouts/AuthLayout.astro";
 import { LoginForm } from "../components/auth/LoginForm";
+import { createSupabaseServerInstance } from "../db/supabase.client";
+
+// Check if user is already logged in
+const supabase = createSupabaseServerInstance({
+  cookies: Astro.cookies,
+  headers: Astro.request.headers,
+});
+
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+// If user is logged in, redirect to /generate
+if (user) {
+  return Astro.redirect("/generate");
+}
 ---
 
 <AuthLayout title="Sign in - 10x Cards">
