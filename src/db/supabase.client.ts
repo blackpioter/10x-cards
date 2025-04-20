@@ -10,9 +10,6 @@ const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 // Export typed SupabaseClient
 export type SupabaseClient = BaseSupabaseClient<Database>;
 
-// Default development user ID from environment variables
-export const DEFAULT_USER_ID = import.meta.env.DEFAULT_USER_ID;
-
 export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 export const cookieOptions: CookieOptionsWithName = {

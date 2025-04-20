@@ -1,4 +1,4 @@
-import { DEFAULT_USER_ID, supabaseClient } from "../db/supabase.client";
+import { supabaseClient } from "../db/supabase.client";
 import type { FlashcardCreateCommand, FlashcardDto } from "../types";
 import { LoggingService } from "./logging.service";
 
@@ -19,6 +19,7 @@ export class FlashcardsError extends Error {
  * Allows updating different flashcards with different statuses in a single operation.
  *
  * @throws {FlashcardsError} with code 404 if any flashcard doesn't exist
+ * @throws {FlashcardsError} with code 401 if user is not authenticated
  * @throws {FlashcardsError} with code 500 for other errors
  */
 export async function updateFlashcardsStatus(
@@ -28,8 +29,16 @@ export async function updateFlashcardsStatus(
     updates: updates.map((u) => ({ count: u.ids.length, status: u.status })),
   });
 
-  // In development, use the default user ID
-  const userId = DEFAULT_USER_ID;
+  // Get current user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseClient.auth.getUser();
+
+  if (authError || !user) {
+    _logger.error("Authentication error", { error: authError });
+    throw new FlashcardsError("User not authenticated", 401);
+  }
 
   // Get all flashcard IDs being updated
   const allFlashcardIds = updates.flatMap((u) => u.ids);
@@ -39,7 +48,7 @@ export async function updateFlashcardsStatus(
     .from("flashcards")
     .select("id")
     .in("id", allFlashcardIds)
-    .eq("user_id", userId);
+    .eq("user_id", user.id);
 
   if (verifyError) {
     _logger.error("Error verifying flashcards", { error: verifyError });
@@ -62,7 +71,7 @@ export async function updateFlashcardsStatus(
       .from("flashcards")
       .update({ status })
       .in("id", ids)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .select();
 
     if (updateError) {
@@ -99,6 +108,7 @@ export async function updateFlashcardsStatus(
  * Used only for initial creation of AI-generated flashcard proposals.
  *
  * @throws {FlashcardsError} with code 404 if generation_id doesn't exist
+ * @throws {FlashcardsError} with code 401 if user is not authenticated
  * @throws {FlashcardsError} with code 500 for other errors
  */
 export async function createFlashcards(command: FlashcardCreateCommand): Promise<FlashcardDto[]> {
@@ -107,8 +117,16 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
     hasGenerationIds: command.flashcards.some((f) => f.generation_id !== null),
   });
 
-  // In development, use the default user ID
-  const userId = DEFAULT_USER_ID;
+  // Get current user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseClient.auth.getUser();
+
+  if (authError || !user) {
+    _logger.error("Authentication error", { error: authError });
+    throw new FlashcardsError("User not authenticated", 401);
+  }
 
   // Verify all generation_ids exist if provided
   const generationIds = command.flashcards.map((f) => f.generation_id).filter((id): id is string => id !== null);
@@ -120,7 +138,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
       .from("generations")
       .select("id")
       .in("id", generationIds)
-      .eq("user_id", userId);
+      .eq("user_id", user.id);
 
     if (generationsError) {
       _logger.error("Error verifying generations", { error: generationsError });
@@ -144,7 +162,7 @@ export async function createFlashcards(command: FlashcardCreateCommand): Promise
     .insert(
       command.flashcards.map((f) => ({
         ...f,
-        user_id: userId,
+        user_id: user.id,
         status: "pending",
       }))
     )
