@@ -1,0 +1,8 @@
+---
+import AuthLayout from "../layouts/AuthLayout.astro";
+import { LogoutMessage } from "../components/auth/LogoutMessage";
+---
+
+<AuthLayout title="Signing out - 10x Cards">
+  <LogoutMessage client:load />
+</AuthLayout>

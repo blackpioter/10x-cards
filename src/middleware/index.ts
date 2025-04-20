@@ -11,6 +11,13 @@ const PUBLIC_PATHS = [
   "/api/auth/login",
   "/api/auth/register",
   "/api/auth/forgot-password",
+  "/api/auth/logout",
+];
+
+// Protected paths that require authentication
+const PROTECTED_PATHS = [
+  "/logout", // Logout page should only be accessible to logged-in users
+  "/generate",
 ];
 
 export const onRequest: MiddlewareHandler = async ({ cookies, request, redirect }, next) => {
@@ -33,7 +40,8 @@ export const onRequest: MiddlewareHandler = async ({ cookies, request, redirect 
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && !PUBLIC_PATHS.includes(path)) {
+  // For protected paths, ensure user is logged in
+  if (!user && (PROTECTED_PATHS.includes(path) || !PUBLIC_PATHS.includes(path))) {
     return redirect("/login");
   }
 
