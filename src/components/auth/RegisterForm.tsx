@@ -10,6 +10,7 @@ interface RegisterFormState {
   confirmPassword: string;
   isLoading: boolean;
   error?: string;
+  success?: string;
 }
 
 export function RegisterForm() {
@@ -22,38 +23,80 @@ export function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
+    setState((prev) => ({ ...prev, isLoading: true, error: undefined, success: undefined }));
 
-    // Form validation
-    if (!state.email || !state.password || !state.confirmPassword) {
+    try {
+      // Form validation
+      if (!state.email || !state.password || !state.confirmPassword) {
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: "Please fill in all fields",
+        }));
+        return;
+      }
+
+      if (state.password !== state.confirmPassword) {
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: "Passwords do not match",
+        }));
+        return;
+      }
+
+      if (state.password.length < 8) {
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: "Password must be at least 8 characters long",
+        }));
+        return;
+      }
+
+      const payload = {
+        email: state.email.trim(),
+        password: state.password,
+      };
+
+      console.log("Sending registration request:", { email: payload.email }); // Log without password
+
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      console.log("Response status:", response.status);
+
+      const data = await response.json();
+      console.log("Response data:", data);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create account");
+      }
+
+      if (data.message) {
+        // Show success message if email confirmation is required
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          success: data.message,
+        }));
+      } else {
+        // Redirect to /generate if no email confirmation is required
+        window.location.href = "/generate";
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: "Please fill in all fields",
+        error: error instanceof Error ? error.message : "An unexpected error occurred",
       }));
-      return;
     }
-
-    if (state.password !== state.confirmPassword) {
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: "Passwords do not match",
-      }));
-      return;
-    }
-
-    if (state.password.length < 8) {
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: "Password must be at least 8 characters long",
-      }));
-      return;
-    }
-
-    // Note: Actual registration logic will be implemented later
-    setState((prev) => ({ ...prev, isLoading: false }));
   };
 
   return (
@@ -63,6 +106,12 @@ export function RegisterForm() {
           error={{ type: "validation", message: state.error }}
           onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
         />
+      )}
+
+      {state.success && (
+        <div className="bg-green-50 text-green-800 p-4 rounded-md">
+          <p>{state.success}</p>
+        </div>
       )}
 
       <div className="space-y-2 text-center">

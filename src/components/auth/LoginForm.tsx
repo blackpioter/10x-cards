@@ -22,18 +22,42 @@ export function LoginForm() {
     e.preventDefault();
     setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
 
-    // Form validation
-    if (!state.email || !state.password) {
+    try {
+      // Form validation
+      if (!state.email || !state.password) {
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: "Please fill in all fields",
+        }));
+        return;
+      }
+
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: state.email,
+          password: state.password,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to sign in");
+      }
+
+      // Redirect to /generate on successful login
+      window.location.href = "/generate";
+    } catch (error) {
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: "Please fill in all fields",
+        error: error instanceof Error ? error.message : "An unexpected error occurred",
       }));
-      return;
     }
-
-    // Note: Actual login logic will be implemented later
-    setState((prev) => ({ ...prev, isLoading: false }));
   };
 
   return (
