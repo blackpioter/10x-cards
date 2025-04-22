@@ -40,15 +40,14 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // Set up auth function in locals
   context.locals.auth = async () => {
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    return session;
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user ? { user } : null;
   };
 
   // Get the user session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const authResult = await context.locals.auth();
+  const user = authResult?.user;
 
   // For protected paths, ensure user is logged in
   if (!user && (PROTECTED_PATHS.includes(path) || !PUBLIC_PATHS.includes(path))) {
