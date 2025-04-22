@@ -113,7 +113,8 @@ export type GenerationErrorLogDto = Pick<
 export interface PaginationDto {
   total: number;
   page: number;
-  limit: number;
+  page_size: number;
+  total_pages: number;
 }
 
 /* ============================================================
