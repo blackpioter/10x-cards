@@ -20,8 +20,8 @@ export const prerender = false;
 export const PATCH: APIRoute = async ({ request, params, locals }) => {
   try {
     // Check authentication
-    const session = await locals.auth();
-    if (!session) {
+    const authResult = await locals.auth();
+    if (!authResult) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -62,7 +62,7 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
     const updateData = validationResult.data as FlashcardUpdateDto;
 
     // Update flashcard using the service
-    const flashcard = await flashcardService.updateFlashcard(id, updateData, session.user.id);
+    const flashcard = await flashcardService.updateFlashcard(id, updateData, authResult.user.id);
 
     return new Response(
       JSON.stringify({
@@ -103,8 +103,8 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
 export const DELETE: APIRoute = async ({ params, locals }) => {
   try {
     // Check authentication
-    const session = await locals.auth();
-    if (!session) {
+    const authResult = await locals.auth();
+    if (!authResult) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -126,7 +126,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
     }
 
     // Delete flashcard using the service
-    await flashcardService.deleteFlashcard(id, session.user.id);
+    await flashcardService.deleteFlashcard(id, authResult.user.id);
 
     return new Response(null, {
       status: 204,

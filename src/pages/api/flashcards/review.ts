@@ -12,8 +12,8 @@ export const prerender = false;
 export const GET: APIRoute = async ({ request, locals }) => {
   try {
     // Check authentication
-    const session = await locals.auth();
-    if (!session) {
+    const authResult = await locals.auth();
+    if (!authResult) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -43,7 +43,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const { status } = validationResult.data;
 
     // Get flashcards for review using the service
-    const reviewCards = await flashcardService.getFlashcardsForReview(session.user.id, status);
+    const reviewCards = await flashcardService.getFlashcardsForReview(authResult.user.id, status);
 
     return new Response(
       JSON.stringify({

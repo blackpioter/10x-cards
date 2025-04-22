@@ -15,8 +15,8 @@ export const prerender = false;
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Check authentication
-    const session = await locals.auth();
-    if (!session) {
+    const authResult = await locals.auth();
+    if (!authResult) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -50,7 +50,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
           status,
         },
       ],
-      session.user.id
+      authResult.user.id
     );
 
     return new Response(

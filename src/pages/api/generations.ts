@@ -17,8 +17,8 @@ const generateFlashcardsSchema = z.object({
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Check authentication
-    const session = await locals.auth();
-    if (!session) {
+    const authResult = await locals.auth();
+    if (!authResult) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -49,7 +49,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     };
 
     // Call the generation service
-    const result = await generationService.generateFlashcards(command, session.user.id);
+    const result = await generationService.generateFlashcards(command, authResult.user.id);
 
     return new Response(JSON.stringify(result), {
       status: 201,

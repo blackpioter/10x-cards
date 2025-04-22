@@ -30,8 +30,8 @@ export const prerender = false;
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     // Check authentication
-    const session = await locals.auth();
-    if (!session) {
+    const authResult = await locals.auth();
+    if (!authResult) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -58,7 +58,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const command = validationResult.data as FlashcardCreateCommand;
 
     // Create flashcards using the service
-    const flashcards = await flashcardService.createFlashcards(command, session.user.id);
+    const flashcards = await flashcardService.createFlashcards(command, authResult.user.id);
 
     return new Response(
       JSON.stringify({
@@ -99,8 +99,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 export const GET: APIRoute = async ({ request, locals }) => {
   try {
     // Check authentication
-    const session = await locals.auth();
-    if (!session) {
+    const authResult = await locals.auth();
+    if (!authResult) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -135,7 +135,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
       sort_by,
       page,
       page_size,
-      user_id: session.user.id,
+      user_id: authResult.user.id,
     });
 
     return new Response(JSON.stringify(result), {
