@@ -21,7 +21,8 @@ const PROTECTED_PATHS = [
   "/flashcards",
 ];
 
-export const onRequest: MiddlewareHandler = async ({ cookies, request, redirect }, next) => {
+export const onRequest: MiddlewareHandler = async (context, next) => {
+  const { cookies, request, redirect } = context;
   const supabase = createSupabaseServerInstance({
     cookies,
     headers: request.headers,
@@ -35,6 +36,14 @@ export const onRequest: MiddlewareHandler = async ({ cookies, request, redirect 
   if (PUBLIC_PATHS.includes(path)) {
     return next();
   }
+
+  // Set up auth function in locals
+  context.locals.auth = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return session;
+  };
 
   // Get the user session
   const {
