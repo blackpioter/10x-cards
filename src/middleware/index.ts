@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
 const PROTECTED_PATHS = [
   "/logout", // Logout page should only be accessible to logged-in users
   "/generate",
+  "/flashcards",
 ];
 
 export const onRequest: MiddlewareHandler = async ({ cookies, request, redirect }, next) => {
