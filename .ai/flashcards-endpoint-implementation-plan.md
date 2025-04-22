@@ -1,67 +1,198 @@
-# API Endpoint Implementation Plan: POST /flashcards
+# API Endpoint Implementation Plan: Flashcards API
 
-## 1. Przegląd punktu końcowego
-Endpoint służy do tworzenia pojedynczych lub wielu fiszek (flashcards). Po uwierzytelnieniu użytkownika endpoint umożliwia zapisanie nowej fiszki lub zestawu fiszek w bazie danych, opcjonalnie powiązanych z istniejącą generacją. Operacja ta wspiera walidację danych, autoryzację oraz transakcje, aby zapewnić spójność danych.
+## 1. Przegląd punktów końcowych
+Zestaw endpointów REST API do zarządzania fiszkami (flashcards). Obejmuje operacje CRUD oraz specjalne endpointy do obsługi statusów i przeglądów. Wszystkie endpointy wymagają uwierzytelnienia użytkownika poprzez Supabase Auth i zapewniają odpowiednią walidację danych wejściowych oraz obsługę błędów.
 
-## 2. Szczegóły żądania
-- **Metoda HTTP:** POST
-- **URL:** /flashcards
-- **Parametry i Request Body:**
-  - **Pojedyncza fiszka:**
-    - Wymagane:
-      - `front`: string (maksymalnie 200 znaków)
-      - `back`: string (maksymalnie 500 znaków)
-      - `source`: wartość spośród: `manual`, `ai-full`, lub `ai-edited`
-    - Opcjonalne:
-      - `generation_id`: UUID (jeśli podane, musi być prawidłowe i referencyjne do istniejącej generacji)
-  - **Wiele fiszek:**
-    - Wymagana właściwość `flashcards`: tablica obiektów, gdzie każdy obiekt zawiera klucze takie jak w przypadku pojedynczej fiszki.
+## 2. Szczegóły żądań
+
+### 2.1. GET /flashcards
+- **Metoda:** GET
+- **Parametry URL:**
+  - `status` (opcjonalny): pending, accepted, rejected
+  - `sort_by` (opcjonalny): created_at, review_count
+  - `page` (wymagany): liczba całkowita > 0
+  - `page_size` (wymagany): liczba całkowita 10-100
+- **Nagłówki:** Authorization Bearer Token
+
+### 2.2. POST /flashcards
+- **Metoda:** POST
+- **Content-Type:** application/json
+- **Body:** FlashcardCreateCommand (pojedyncza fiszka lub tablica)
+- **Nagłówki:** Authorization Bearer Token
+
+### 2.3. PATCH /flashcards/:id
+- **Metoda:** PATCH
+- **Parametry URL:** id (UUID)
+- **Content-Type:** application/json
+- **Body:** FlashcardUpdateDto
+- **Nagłówki:** Authorization Bearer Token
+
+### 2.4. DELETE /flashcards/:id
+- **Metoda:** DELETE
+- **Parametry URL:** id (UUID)
+- **Nagłówki:** Authorization Bearer Token
+
+### 2.5. GET /flashcards/review
+- **Metoda:** GET
+- **Parametry URL:**
+  - `status` (opcjonalny, domyślnie "pending")
+- **Nagłówki:** Authorization Bearer Token
 
 ## 3. Wykorzystywane typy
-- `FlashcardDto` – DTO zwracana przez API dla utworzonej fiszki.
-- `FlashcardCreateDto` – DTO reprezentująca dane pojedynczej fiszki otrzymanej w żądaniu.
-- `FlashcardCreateCommand` – Komenda umożliwiająca przesłanie jednego lub wielu obiektów fiszki.
 
-## 4. Szczegóły odpowiedzi
-- **Pojedyncza fiszka:**
-  - **Status:** 201 Created
-  - **Treść odpowiedzi:** Obiekt fiszki zawierający pola: `id`, `user_id`, `generation_id`, `front`, `back`, `source`, `created_at`, `last_reviewed`, `next_review_date`, `review_count`, `easiness_factor`, `interval`.
-- **Wiele fiszek:**
-  - **Status:** 201 Created
-  - **Treść odpowiedzi:** Tablica obiektów fiszki zgodnych z powyższą strukturą.
+### 3.1. Data Transfer Objects (DTOs)
+```typescript
+interface FlashcardListResponseDto {
+  data: FlashcardDto[];
+  pagination: PaginationDto;
+}
 
-## 5. Przepływ danych
-1. Odebranie żądania POST na endpoint `/flashcards`.
-2. Walidacja danych wejściowych przy użyciu narzędzia takiego jak Zod:
-   - Sprawdzenie długości `front` (max 200 znaków) i `back` (max 500 znaków).
-   - Weryfikacja poprawności `source` oraz opcjonalnego `generation_id`.
-3. Autoryzacja użytkownika poprzez weryfikację tokenu (Supabase Auth lub odpowiedni mechanizm).
-4. Przekazanie zweryfikowanych danych do warstwy serwisowej (np. `flashcards.service` w katalogu `src/lib/`), gdzie następuje:
-   - Obsługa logiki biznesowej oraz ewentualna walidacja referencji (np. istnienie `generation_id`).
-   - Wykonanie operacji INSERT w bazie danych z wykorzystaniem transakcji dla spójności.
-5. Zwrócenie odpowiedzi zawierającej dane utworzonej(-ych) fiszki(-ek).
+interface FlashcardFilterParams {
+  status?: 'pending' | 'accepted' | 'rejected';
+  sort_by?: string;
+  page: number;
+  page_size: number;
+}
 
-## 6. Względy bezpieczeństwa
-- **Autoryzacja:** Upewnienie się, że użytkownik jest uwierzytelniony przed przetwarzaniem żądania.
-- **Walidacja danych:** Użycie Zod lub innego mechanizmu walidacji do sprawdzenia poprawności danych wejściowych.
-- **Spójność danych:** Weryfikacja istnienia `generation_id` oraz zapewnienie, że operacje bazy danych są wykonywane w obrębie transakcji.
-- **Bezpieczeństwo bazy danych:** Zapobieganie SQL injection i innym atakom poprzez użycie odpowiednich mechanizmów ORM/SDK (Supabase Client).
+interface FlashcardReviewDto {
+  id: string;
+  front: string;
+  back: string;
+  review_count: number;
+  next_review_date: string | null;
+}
+```
 
-## 7. Obsługa błędów
-- **400 Bad Request:** Zwracane, gdy dane wejściowe nie spełniają wymagań walidacyjnych (np. przekroczenie limitu znaków, nieprawidłowy format UUID).
-- **404 Not Found:** Zwracane, gdy podane `generation_id` nie istnieje w bazie.
-- **500 Internal Server Error:** Zwracane w przypadku nieoczekiwanych błędów serwera (np. problem z bazą danych). Dodatkowo, błędy mogą być logowane przy użyciu mechanizmu logowania oraz opcjonalnie zapisywane w tabeli `generation_error_logs` (jeśli dotyczy operacji generacji).
+### 3.2. Command Models
+```typescript
+interface FlashcardUpdateCommand {
+  front?: string;
+  back?: string;
+  source?: FlashcardSource;
+}
+```
 
-## 8. Rozważania dotyczące wydajności
-- **Transakcje zbiorcze:** W przypadku wprowadzania wielu fiszek, użycie transakcji i operacji bulk insert w celu zmniejszenia liczby wywołań do bazy.
-- **Optymalizacja walidacji:** Walidacja danych przed przekazaniem ich do bazy danych, aby ograniczyć obciążenie serwera.
-- **Indeksowanie:** Upewnienie się, że kolumny takie jak `user_id` i `generation_id` są odpowiednio indeksowane, co usprawni wyszukiwanie i operacje JOIN.
+## 4. Przepływ danych
 
-## 9. Etapy wdrożenia
-1. **Projektowanie API:** Określenie szczegółowych wymagań i przygotowanie specyfikacji endpointu.
-2. **Implementacja walidacji:** Stworzenie schematów walidacyjnych (np. przy użyciu Zod) dla pojedynczej i wielu fiszek.
-3. **Warstwa serwisowa:** Implementacja logiki biznesowej w serwisie, np. `flashcards.service`, w katalogu `src/lib/`.
-4. **Integracja z bazą danych:** Wdrożenie operacji INSERT (z użyciem Supabase Client) wraz z transakcjami.
-5. **Autoryzacja:** Integracja endpointu z mechanizmem autoryzacji (Supabase Auth), aby upewnić się, że operacje są wykonywane przez zalogowanego użytkownika.
-6. **Obsługa błędów i logika fallback:** Implementacja mechanizmów obsługi błędów oraz logowania problemów.
-7. **Testy manualne i review kodu:** Przegląd wdrożonego kodu oraz testy na środowisku testowym.
+### 4.1. Pobieranie listy fiszek
+1. Walidacja parametrów zapytania (page, page_size, sort_by)
+2. Autoryzacja użytkownika (Supabase Auth)
+3. Przekazanie parametrów do FlashcardsService
+4. Pobranie danych z bazy z uwzględnieniem filtrów i paginacji
+5. Transformacja do FlashcardListResponseDto
+6. Zwrócenie odpowiedzi
+
+### 4.2. Tworzenie fiszek
+1. Walidacja body requestu (Zod schema)
+2. Autoryzacja użytkownika
+3. Walidacja biznesowa (np. istnienie generation_id)
+4. Utworzenie fiszek w transakcji
+5. Zwrócenie utworzonych obiektów
+
+### 4.3. Aktualizacja fiszki
+1. Walidacja parametrów i body
+2. Autoryzacja i weryfikacja właściciela
+3. Aktualizacja w bazie danych
+4. Zwrócenie zaktualizowanego obiektu
+
+### 4.4. Usuwanie fiszki
+1. Walidacja ID
+2. Autoryzacja i weryfikacja właściciela
+3. Usunięcie z bazy danych
+4. Zwrócenie potwierdzenia
+
+### 4.5. Pobieranie fiszek do przeglądu
+1. Walidacja parametrów
+2. Autoryzacja użytkownika
+3. Pobranie fiszek z uwzględnieniem algorytmu powtórek
+4. Transformacja do FlashcardReviewDto
+5. Zwrócenie listy
+
+## 5. Względy bezpieczeństwa
+
+### 5.1. Uwierzytelnianie i Autoryzacja
+- Wykorzystanie Supabase Auth do uwierzytelniania
+- Weryfikacja tokenu JWT w middleware
+- Sprawdzanie właściciela zasobu przy operacjach modyfikacji
+- Row Level Security (RLS) w bazie danych
+
+### 5.2. Walidacja danych
+- Sanityzacja wszystkich danych wejściowych
+- Walidacja typów i zakresów wartości
+- Ograniczenie długości pól tekstowych
+- Walidacja UUID i referencji
+
+### 5.3. Zabezpieczenia bazy danych
+- Prepared statements dla wszystkich zapytań
+- Transakcje dla operacji złożonych
+- Indeksy dla często używanych kolumn
+- Ograniczenia integralności danych
+
+### 5.4. Rate Limiting
+- Implementacja limitów zapytań per użytkownik
+- Osobne limity dla różnych typów operacji
+- Cache dla często pobieranych danych
+
+## 6. Obsługa błędów
+
+### 6.1. Kody HTTP
+- 200: Sukces (GET, PATCH)
+- 201: Utworzono zasób (POST)
+- 400: Błędne dane wejściowe
+- 401: Brak uwierzytelnienia
+- 403: Brak uprawnień
+- 404: Zasób nie znaleziony
+- 429: Przekroczono limit zapytań
+- 500: Błąd serwera
+
+### 6.2. Struktura błędów
+```typescript
+interface ApiError {
+  error: string;
+  code: string;
+  details?: Record<string, string[]>;
+  timestamp: string;
+}
+```
+
+### 6.3. Logowanie błędów
+- Wykorzystanie tabeli generation_error_logs
+- Strukturyzowane logi dla debugowania
+- Monitoring błędów krytycznych
+
+## 7. Rozważania dotyczące wydajności
+
+### 7.1. Optymalizacja bazy danych
+- Indeksy dla kolumn używanych w filtrach i sortowaniu
+- Partycjonowanie danych dla dużych zbiorów
+- Optymalizacja zapytań przez EXPLAIN ANALYZE
+
+### 7.2. Caching
+- Cache dla często pobieranych fiszek
+- Cache dla wyników paginacji
+- Invalidacja cache przy modyfikacjach
+
+### 7.3. Optymalizacja zapytań
+- Eager loading powiązanych danych
+- Limit pobieranych kolumn (SELECT)
+- Bulk operations dla wielu operacji
+
+## 8. Etapy wdrożenia
+
+### 8.1. Przygotowanie
+1. Aktualizacja schematów walidacji (Zod)
+2. Rozszerzenie typów DTO i Command Models
+3. Implementacja nowych metod w FlashcardsService
+
+### 8.2. Implementacja endpointów
+1. GET /flashcards z obsługą filtrów i paginacji
+2. Rozszerzenie POST /flashcards o bulk operations
+3. Implementacja PATCH /flashcards/:id
+4. Implementacja DELETE /flashcards/:id
+5. Implementacja GET /flashcards/review
+
+### 8.3. Zabezpieczenia
+1. Integracja z Supabase Auth
+2. Implementacja middleware autoryzacji
+3. Konfiguracja Rate Limitingu
+4. Wdrożenie Row Level Security
