@@ -159,3 +159,15 @@ export interface ErrorState {
   };
   timestamp?: number;
 }
+
+/**
+ * DTO for flashcards in review mode.
+ * Contains only the essential fields needed for review.
+ */
+export interface FlashcardReviewDto {
+  id: string;
+  front: string;
+  back: string;
+  review_count: number;
+  next_review_date: string | null;
+}
