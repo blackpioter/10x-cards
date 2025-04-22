@@ -1,8 +1,6 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
-import { FlashcardsError } from "../../../lib/flashcard.service";
-import { supabaseClient } from "../../../db/supabase.client";
-import type { FlashcardReviewDto } from "../../../types";
+import { FlashcardsError, flashcardService } from "../../../lib/flashcard.service";
 
 // Validation schema for query parameters
 const reviewQuerySchema = z.object({
@@ -11,8 +9,17 @@ const reviewQuerySchema = z.object({
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, locals }) => {
   try {
+    // Check authentication
+    const session = await locals.auth();
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Parse URL parameters
     const url = new URL(request.url);
     const params = Object.fromEntries(url.searchParams);
@@ -35,39 +42,8 @@ export const GET: APIRoute = async ({ request }) => {
 
     const { status } = validationResult.data;
 
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseClient.auth.getUser();
-
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({
-          error: "User not authenticated",
-        }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Get flashcards for review
-    const { data: flashcards, error: fetchError } = await supabaseClient
-      .from("flashcards")
-      .select("id, front, back, review_count, next_review_date")
-      .eq("user_id", user.id)
-      .eq("status", status)
-      .order("next_review_date", { ascending: true, nullsFirst: true })
-      .limit(10);
-
-    if (fetchError) {
-      console.error("Error fetching flashcards for review:", fetchError);
-      throw new FlashcardsError("Error fetching flashcards for review", 500);
-    }
-
-    const reviewCards: FlashcardReviewDto[] = flashcards || [];
+    // Get flashcards for review using the service
+    const reviewCards = await flashcardService.getFlashcardsForReview(session.user.id, status);
 
     return new Response(
       JSON.stringify({

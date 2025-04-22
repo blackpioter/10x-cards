@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
 import type { FlashcardUpdateDto } from "../../../types";
-import { FlashcardsError, updateFlashcard, deleteFlashcard } from "../../../lib/flashcard.service";
+import { FlashcardsError, flashcardService } from "../../../lib/flashcard.service";
 
 // Validation schema for update
 const flashcardUpdateSchema = z.object({
@@ -17,8 +17,17 @@ const flashcardUpdateSchema = z.object({
 
 export const prerender = false;
 
-export const PATCH: APIRoute = async ({ request, params }) => {
+export const PATCH: APIRoute = async ({ request, params, locals }) => {
   try {
+    // Check authentication
+    const session = await locals.auth();
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Validate ID parameter
     const { id } = params;
     if (!id || !z.string().uuid().safeParse(id).success) {
@@ -53,7 +62,7 @@ export const PATCH: APIRoute = async ({ request, params }) => {
     const updateData = validationResult.data as FlashcardUpdateDto;
 
     // Update flashcard using the service
-    const flashcard = await updateFlashcard(id, updateData);
+    const flashcard = await flashcardService.updateFlashcard(id, updateData, session.user.id);
 
     return new Response(
       JSON.stringify({
@@ -91,8 +100,17 @@ export const PATCH: APIRoute = async ({ request, params }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, locals }) => {
   try {
+    // Check authentication
+    const session = await locals.auth();
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Validate ID parameter
     const { id } = params;
     if (!id || !z.string().uuid().safeParse(id).success) {
@@ -108,7 +126,7 @@ export const DELETE: APIRoute = async ({ params }) => {
     }
 
     // Delete flashcard using the service
-    await deleteFlashcard(id);
+    await flashcardService.deleteFlashcard(id, session.user.id);
 
     return new Response(null, {
       status: 204,

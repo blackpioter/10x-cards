@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
-import { FlashcardsError, updateFlashcardsStatus } from "../../../lib/flashcard.service";
+import { FlashcardsError, flashcardService } from "../../../lib/flashcard.service";
 
 // Validation schema
 const updateStatusSchema = z.object({
@@ -12,8 +12,17 @@ const updateStatusSchema = z.object({
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    // Check authentication
+    const session = await locals.auth();
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Parse and validate request body
     const body = await request.json();
     const validationResult = updateStatusSchema.safeParse(body);
@@ -34,12 +43,15 @@ export const POST: APIRoute = async ({ request }) => {
     const { status, flashcard_ids } = validationResult.data;
 
     // Update flashcards status using the service
-    const flashcards = await updateFlashcardsStatus([
-      {
-        ids: flashcard_ids,
-        status,
-      },
-    ]);
+    const flashcards = await flashcardService.updateFlashcardsStatus(
+      [
+        {
+          ids: flashcard_ids,
+          status,
+        },
+      ],
+      session.user.id
+    );
 
     return new Response(
       JSON.stringify({

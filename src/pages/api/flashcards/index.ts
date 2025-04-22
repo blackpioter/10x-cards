@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
 import type { FlashcardCreateCommand } from "../../../types";
-import { FlashcardsError, createFlashcards, getFlashcards } from "../../../lib/flashcard.service";
+import { FlashcardsError, flashcardService } from "../../../lib/flashcard.service";
 
 // Validation schemas
 const flashcardCreateSchema = z.object({
@@ -27,8 +27,17 @@ const flashcardFilterSchema = z.object({
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    // Check authentication
+    const session = await locals.auth();
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Parse and validate request body
     const body = await request.json();
     const validationResult = flashcardsCreateCommandSchema.safeParse(body);
@@ -49,7 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
     const command = validationResult.data as FlashcardCreateCommand;
 
     // Create flashcards using the service
-    const flashcards = await createFlashcards(command);
+    const flashcards = await flashcardService.createFlashcards(command, session.user.id);
 
     return new Response(
       JSON.stringify({
@@ -87,8 +96,17 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, locals }) => {
   try {
+    // Check authentication
+    const session = await locals.auth();
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Parse URL parameters
     const url = new URL(request.url);
     const params = Object.fromEntries(url.searchParams);
@@ -112,11 +130,12 @@ export const GET: APIRoute = async ({ request }) => {
     const { status, sort_by, page, page_size } = validationResult.data;
 
     // Get flashcards using the service
-    const result = await getFlashcards({
+    const result = await flashcardService.getFlashcards({
       status,
       sort_by,
       page,
       page_size,
+      user_id: session.user.id,
     });
 
     return new Response(JSON.stringify(result), {
