@@ -1,7 +1,7 @@
 import React from "react";
-import { Button } from "./ui/button";
-import { Card, CardContent, CardFooter } from "./ui/card";
-import { Textarea } from "./ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 
 interface FlashcardFormProps {
   onSubmit?: (front: string, back: string) => void;

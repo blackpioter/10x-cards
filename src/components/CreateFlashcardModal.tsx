@@ -1,7 +1,7 @@
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FlashcardForm } from "./FlashcardForm";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { Plus, PlusCircle } from "lucide-react";
 
 interface CreateFlashcardModalProps {

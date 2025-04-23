@@ -1,9 +1,9 @@
 import React, { useCallback } from "react";
 import type { FlashcardViewModel } from "../types";
-import { Card, CardContent, CardFooter } from "./ui/card";
-import { Button } from "./ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Edit2, Trash2, Check, X, Loader2 } from "lucide-react";
-import { Badge } from "./ui/badge";
+import { Badge } from "@/components/ui/badge";
 import type { FlashcardActionStatus } from "../types";
 
 interface ExistingFlashcardListItemProps {

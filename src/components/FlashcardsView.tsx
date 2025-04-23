@@ -3,11 +3,11 @@ import { useFlashcards } from "./hooks/useFlashcards";
 import { ExistingFlashcardList } from "./ExistingFlashcardList";
 import { FlashcardFilters } from "./FlashcardFilters";
 import { PaginationControls } from "./PaginationControls";
-import { Alert, AlertDescription } from "./ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Plus } from "lucide-react";
 import { EditFlashcardModal } from "./EditFlashcardModal";
 import { CreateFlashcardModal } from "./CreateFlashcardModal";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import type { FlashcardViewModel } from "../types";
 
 export function FlashcardsView() {
