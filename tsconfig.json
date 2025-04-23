@@ -7,9 +7,11 @@
     "jsxImportSource": "react",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "~/*": ["./src/*"]
     },
-    "moduleResolution": "node",
-    "allowImportingTsExtensions": true
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "types": ["vitest/globals", "@testing-library/jest-dom", "@playwright/test"]
   }
 }
