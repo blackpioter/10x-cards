@@ -132,8 +132,6 @@ export function useFlashcards({
   // Function to fetch counts for each status
   const fetchStatusCounts = useCallback(async () => {
     try {
-      setState((prev) => ({ ...prev, isLoading: true }));
-
       // Get total count
       const totalResponse = await fetch("/api/flashcards?page=1&page_size=10");
       if (!totalResponse.ok) {
@@ -175,16 +173,9 @@ export function useFlashcards({
       setState((prev) => ({
         ...prev,
         statusCounts: newStatusCounts,
-        isLoading: false,
-        error: null, // Clear any previous errors
       }));
     } catch (error) {
       console.error("Error fetching status counts:", error);
-      setState((prev) => ({
-        ...prev,
-        error: error instanceof Error ? error.message : "Failed to fetch status counts",
-        isLoading: false,
-      }));
     }
   }, []);
 
@@ -198,12 +189,41 @@ export function useFlashcards({
   // Function to update flashcard status
   const updateFlashcardStatus = useCallback(
     async (id: string, newStatus: FlashcardActionStatus) => {
-      setState((prev) => ({
-        ...prev,
-        flashcards: prev.flashcards.map((f) =>
-          f.id === id ? { ...f, operations: { ...f.operations, statusChange: { isLoading: true, error: null } } } : f
-        ),
-      }));
+      // Optimistically update the UI
+      setState((prev) => {
+        const flashcard = prev.flashcards.find((f) => f.id === id);
+        if (!flashcard) return prev;
+
+        const shouldRemoveFromList = statusFilter !== "all" && newStatus !== statusFilter;
+        const updatedFlashcards = prev.flashcards
+          .map((f) =>
+            f.id === id
+              ? {
+                  ...f,
+                  status: newStatus,
+                  operations: { ...f.operations, statusChange: { isLoading: true, error: null } },
+                }
+              : f
+          )
+          .filter((f) => !(f.id === id && shouldRemoveFromList));
+
+        // Update status counts optimistically
+        const statusCounts = { ...prev.statusCounts };
+        if (flashcard.status !== newStatus) {
+          statusCounts[flashcard.status as FlashcardActionStatus]--;
+          statusCounts[newStatus]++;
+        }
+
+        return {
+          ...prev,
+          flashcards: updatedFlashcards,
+          statusCounts,
+          pagination: {
+            ...prev.pagination,
+            total: prev.pagination.total - (shouldRemoveFromList ? 1 : 0),
+          },
+        };
+      });
 
       try {
         const response = await fetch(`/api/flashcards/${id}`, {
@@ -216,23 +236,23 @@ export function useFlashcards({
           throw new Error("Failed to update flashcard status");
         }
 
-        const updatedFlashcard = await response.json();
+        // Update loading state after successful update
         setState((prev) => ({
           ...prev,
           flashcards: prev.flashcards.map((f) =>
             f.id === id
               ? {
-                  ...toViewModel(updatedFlashcard.data),
+                  ...f,
                   operations: { ...f.operations, statusChange: { isLoading: false, error: null } },
                 }
               : f
           ),
         }));
 
-        // Refresh all counts after status change
+        // Update counts in the background
         fetchStatusCounts();
-        fetchPendingCount();
       } catch (error) {
+        // Revert optimistic update on error
         setState((prev) => ({
           ...prev,
           flashcards: prev.flashcards.map((f) =>
@@ -250,9 +270,11 @@ export function useFlashcards({
               : f
           ),
         }));
+        // Refresh counts to ensure they're accurate
+        fetchStatusCounts();
       }
     },
-    [toViewModel, fetchStatusCounts]
+    [statusFilter, fetchStatusCounts]
   );
 
   // Function to delete flashcard
@@ -342,10 +364,6 @@ export function useFlashcards({
               : f
           ),
         }));
-
-        // Refresh the flashcards list and counts
-        fetchFlashcards(state.pagination.page, statusFilter);
-        fetchStatusCounts();
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -366,7 +384,7 @@ export function useFlashcards({
         }));
       }
     },
-    [toViewModel, fetchFlashcards, state.pagination.page, statusFilter, fetchStatusCounts]
+    [toViewModel]
   );
 
   // Function to change page
