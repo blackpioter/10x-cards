@@ -150,7 +150,6 @@ export type FlashcardUpdateDto = Partial<{
 }>;
 
 ```
-*(Uwaga: Konieczne jest potwierdzenie z zespołem backendowym, czy `GET /flashcards` zwraca status oraz czy `PATCH /flashcards/:id` pozwala na aktualizację statusu. Plan zakłada, że tak.)*
 
 ## 6. Zarządzanie stanem
 Stan widoku będzie zarządzany w głównym komponencie `FlashcardsView` przy użyciu hooków React (`useState`, `useEffect`). Rozważone zostanie stworzenie customowego hooka `useFlashcards` w celu enkapsulacji logiki pobierania danych, obsługi filtrów, paginacji, stanu ładowania, błędów oraz funkcji mutujących stan (aktualizacja, usuwanie).
