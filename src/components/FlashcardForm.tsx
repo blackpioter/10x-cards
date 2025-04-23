@@ -1,22 +1,55 @@
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter } from "./ui/card";
 import { Textarea } from "./ui/textarea";
 
 interface FlashcardFormProps {
-  onSubmit: (front: string, back: string) => void;
+  onSubmit?: (front: string, back: string) => void;
+  front?: string;
+  back?: string;
+  onFrontChange?: (value: string) => void;
+  onBackChange?: (value: string) => void;
+  hideSubmitButton?: boolean;
 }
 
-export function FlashcardForm({ onSubmit }: FlashcardFormProps) {
-  const [front, setFront] = useState("");
-  const [back, setBack] = useState("");
+export function FlashcardForm({
+  onSubmit,
+  front: externalFront,
+  back: externalBack,
+  onFrontChange,
+  onBackChange,
+  hideSubmitButton,
+}: FlashcardFormProps) {
+  const [localFront, setLocalFront] = React.useState("");
+  const [localBack, setLocalBack] = React.useState("");
+
+  const front = externalFront !== undefined ? externalFront : localFront;
+  const back = externalBack !== undefined ? externalBack : localBack;
+
+  const handleFrontChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    if (onFrontChange) {
+      onFrontChange(value);
+    } else {
+      setLocalFront(value);
+    }
+  };
+
+  const handleBackChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    if (onBackChange) {
+      onBackChange(value);
+    } else {
+      setLocalBack(value);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (front.trim() && back.trim()) {
+    if (onSubmit && front.trim() && back.trim()) {
       onSubmit(front.trim(), back.trim());
-      setFront("");
-      setBack("");
+      if (!onFrontChange) setLocalFront("");
+      if (!onBackChange) setLocalBack("");
     }
   };
 
@@ -28,24 +61,21 @@ export function FlashcardForm({ onSubmit }: FlashcardFormProps) {
             <Textarea
               placeholder="Front side of the flashcard..."
               value={front}
-              onChange={(e) => setFront(e.target.value)}
+              onChange={handleFrontChange}
               rows={3}
             />
           </div>
           <div>
-            <Textarea
-              placeholder="Back side of the flashcard..."
-              value={back}
-              onChange={(e) => setBack(e.target.value)}
-              rows={3}
-            />
+            <Textarea placeholder="Back side of the flashcard..." value={back} onChange={handleBackChange} rows={3} />
           </div>
         </CardContent>
-        <CardFooter className="flex justify-end">
-          <Button type="submit" disabled={!front.trim() || !back.trim()}>
-            Add Flashcard
-          </Button>
-        </CardFooter>
+        {!hideSubmitButton && (
+          <CardFooter className="flex justify-end">
+            <Button type="submit" disabled={!front.trim() || !back.trim()}>
+              Add Flashcard
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     </form>
   );
