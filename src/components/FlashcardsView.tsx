@@ -3,7 +3,6 @@ import { useFlashcards } from "./hooks/useFlashcards";
 import { ExistingFlashcardList } from "./ExistingFlashcardList";
 import { FlashcardForm } from "./FlashcardForm";
 import { FlashcardFilters } from "./FlashcardFilters";
-import FlashcardStats from "./FlashcardStats";
 import { PaginationControls } from "./PaginationControls";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Loader2 } from "lucide-react";
@@ -16,8 +15,8 @@ export function FlashcardsView() {
     pagination,
     isLoading,
     error,
-    stats,
     statusFilter,
+    statusCounts,
     updateFlashcardStatus,
     deleteFlashcard,
     updateFlashcard,
@@ -49,8 +48,6 @@ export function FlashcardsView() {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
-      <FlashcardStats currentListTotal={stats.currentListTotal} pendingReviewCount={stats.pendingReviewCount} />
-
       <div className="mb-8">
         <FlashcardForm
           onSubmit={async (front, back) => {
@@ -84,7 +81,12 @@ export function FlashcardsView() {
       </div>
 
       <div className="mb-4">
-        <FlashcardFilters statusFilter={statusFilter} onStatusFilterChange={filterByStatus} />
+        <FlashcardFilters
+          statusFilter={statusFilter}
+          onStatusFilterChange={filterByStatus}
+          counts={statusCounts}
+          isLoading={isLoading}
+        />
       </div>
 
       {isLoading ? (

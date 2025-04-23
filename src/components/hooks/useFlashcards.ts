@@ -18,6 +18,12 @@ interface UseFlashcardsState {
   flashcards: FlashcardViewModel[];
   pagination: PaginationDto;
   stats: FlashcardStatsViewModel;
+  statusCounts: {
+    all: number;
+    pending: number;
+    accepted: number;
+    rejected: number;
+  };
   isLoading: boolean;
   error: string | null;
 }
@@ -38,6 +44,12 @@ export function useFlashcards({
     stats: {
       currentListTotal: 0,
       pendingReviewCount: 0,
+    },
+    statusCounts: {
+      all: 0,
+      pending: 0,
+      accepted: 0,
+      rejected: 0,
     },
     isLoading: true,
     error: null,
@@ -117,11 +129,71 @@ export function useFlashcards({
     }
   }, []);
 
+  // Function to fetch counts for each status
+  const fetchStatusCounts = useCallback(async () => {
+    try {
+      setState((prev) => ({ ...prev, isLoading: true }));
+
+      // Get total count
+      const totalResponse = await fetch("/api/flashcards?page=1&page_size=10");
+      if (!totalResponse.ok) {
+        console.error("Total count response not OK:", await totalResponse.text());
+        throw new Error("Failed to fetch total count");
+      }
+      const totalData = await totalResponse.json();
+      const total = totalData.pagination.total;
+
+      // Get counts for specific statuses
+      const statuses: FlashcardActionStatus[] = ["pending", "accepted", "rejected"];
+      const statusCounts = await Promise.all(
+        statuses.map(async (status) => {
+          const response = await fetch(`/api/flashcards?status=${status}&page=1&page_size=10`);
+          if (!response.ok) {
+            console.error(`Count response for ${status} not OK:`, await response.text());
+            throw new Error(`Failed to fetch count for ${status} status`);
+          }
+
+          const data = await response.json();
+          return { status, count: data.pagination.total };
+        })
+      );
+
+      const newStatusCounts = {
+        all: total,
+        pending: 0,
+        accepted: 0,
+        rejected: 0,
+        ...statusCounts.reduce(
+          (acc, { status, count }) => ({
+            ...acc,
+            [status]: count,
+          }),
+          {}
+        ),
+      };
+
+      setState((prev) => ({
+        ...prev,
+        statusCounts: newStatusCounts,
+        isLoading: false,
+        error: null, // Clear any previous errors
+      }));
+    } catch (error) {
+      console.error("Error fetching status counts:", error);
+      setState((prev) => ({
+        ...prev,
+        error: error instanceof Error ? error.message : "Failed to fetch status counts",
+        isLoading: false,
+      }));
+    }
+  }, []);
+
   // Initial data fetch
   useEffect(() => {
     fetchFlashcards(initialPage, initialStatus);
     fetchPendingCount();
-  }, [fetchFlashcards, fetchPendingCount, initialPage, initialStatus]);
+    fetchStatusCounts();
+  }, [fetchFlashcards, fetchPendingCount, fetchStatusCounts, initialPage, initialStatus]);
 
   // Function to update flashcard status
   const updateFlashcardStatus = useCallback(
@@ -157,10 +229,9 @@ export function useFlashcards({
           ),
         }));
 
-        // Refresh stats if needed
-        if (newStatus === "pending") {
-          fetchPendingCount();
-        }
+        // Refresh all counts after status change
+        fetchStatusCounts();
+        fetchPendingCount();
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -181,58 +252,62 @@ export function useFlashcards({
         }));
       }
     },
-    [toViewModel]
+    [toViewModel, fetchStatusCounts]
   );
 
   // Function to delete flashcard
-  const deleteFlashcard = useCallback(async (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      flashcards: prev.flashcards.map((f) =>
-        f.id === id ? { ...f, operations: { ...f.operations, delete: { isLoading: true, error: null } } } : f
-      ),
-    }));
-
-    try {
-      const response = await fetch(`/api/flashcards/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete flashcard");
-      }
-
-      setState((prev) => ({
-        ...prev,
-        flashcards: prev.flashcards.filter((f) => f.id !== id),
-        stats: {
-          ...prev.stats,
-          currentListTotal: prev.stats.currentListTotal - 1,
-        },
-      }));
-
-      // Refresh pending count if needed
-      fetchPendingCount();
-    } catch (error) {
+  const deleteFlashcard = useCallback(
+    async (id: string) => {
       setState((prev) => ({
         ...prev,
         flashcards: prev.flashcards.map((f) =>
-          f.id === id
-            ? {
-                ...f,
-                operations: {
-                  ...f.operations,
-                  delete: {
-                    isLoading: false,
-                    error: error instanceof Error ? error.message : "Failed to delete flashcard",
-                  },
-                },
-              }
-            : f
+          f.id === id ? { ...f, operations: { ...f.operations, delete: { isLoading: true, error: null } } } : f
         ),
       }));
-    }
-  }, []);
+
+      try {
+        const response = await fetch(`/api/flashcards/${id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to delete flashcard");
+        }
+
+        setState((prev) => ({
+          ...prev,
+          flashcards: prev.flashcards.filter((f) => f.id !== id),
+          stats: {
+            ...prev.stats,
+            currentListTotal: prev.stats.currentListTotal - 1,
+          },
+        }));
+
+        // Refresh all counts after deletion
+        fetchStatusCounts();
+        fetchPendingCount();
+      } catch (error) {
+        setState((prev) => ({
+          ...prev,
+          flashcards: prev.flashcards.map((f) =>
+            f.id === id
+              ? {
+                  ...f,
+                  operations: {
+                    ...f.operations,
+                    delete: {
+                      isLoading: false,
+                      error: error instanceof Error ? error.message : "Failed to delete flashcard",
+                    },
+                  },
+                }
+              : f
+          ),
+        }));
+      }
+    },
+    [fetchStatusCounts]
+  );
 
   // Function to update flashcard content
   const updateFlashcard = useCallback(
@@ -268,8 +343,9 @@ export function useFlashcards({
           ),
         }));
 
-        // Refresh the flashcards list to ensure we have the latest data
+        // Refresh the flashcards list and counts
         fetchFlashcards(state.pagination.page, statusFilter);
+        fetchStatusCounts();
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -290,7 +366,7 @@ export function useFlashcards({
         }));
       }
     },
-    [toViewModel, fetchFlashcards, state.pagination.page, statusFilter]
+    [toViewModel, fetchFlashcards, state.pagination.page, statusFilter, fetchStatusCounts]
   );
 
   // Function to change page
@@ -313,6 +389,7 @@ export function useFlashcards({
   return {
     ...state,
     statusFilter,
+    statusCounts: state.statusCounts,
     updateFlashcardStatus,
     deleteFlashcard,
     updateFlashcard,
