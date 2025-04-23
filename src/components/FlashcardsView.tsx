@@ -110,7 +110,7 @@ export function FlashcardsView() {
         console.error("Error updating flashcard:", error);
       }
     },
-    [updateFlashcard]
+    [updateFlashcard, handleCloseEditModal]
   );
 
   if (error) {
