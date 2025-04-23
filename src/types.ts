@@ -172,3 +172,22 @@ export interface FlashcardReviewDto {
   review_count: number;
   next_review_date: string | null;
 }
+
+/**
+ * View Model representing a flashcard in the list view.
+ * Extends FlashcardDto with UI-specific fields.
+ */
+export interface FlashcardViewModel extends FlashcardDto {
+  isEditing?: boolean;
+  isSaving?: boolean;
+  errorMessage?: string;
+  status: "pending" | "accepted" | "rejected";
+}
+
+/**
+ * View Model for displaying flashcard statistics.
+ */
+export interface FlashcardStatsViewModel {
+  currentListTotal: number;
+  pendingReviewCount: number;
+}
