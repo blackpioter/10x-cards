@@ -7,7 +7,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "./ui/pagination";
+} from "@/components/ui/pagination";
 import type { PaginationDto } from "../types";
 
 interface PaginationControlsProps {
@@ -76,7 +76,7 @@ export function PaginationControls({ pagination, onPageChange }: PaginationContr
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationPrevious onClick={() => onPageChange(page - 1)} disabled={page === 1} size="default" />
+          <PaginationPrevious onClick={() => onPageChange(page - 1)} disabled={page === 1} />
         </PaginationItem>
 
         {getPageNumbers().map((pageNum, index) =>
@@ -94,7 +94,7 @@ export function PaginationControls({ pagination, onPageChange }: PaginationContr
         )}
 
         <PaginationItem>
-          <PaginationNext onClick={() => onPageChange(page + 1)} disabled={page === total_pages} size="default" />
+          <PaginationNext onClick={() => onPageChange(page + 1)} disabled={page === total_pages} />
         </PaginationItem>
       </PaginationContent>
     </Pagination>
