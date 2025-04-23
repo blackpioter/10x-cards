@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useCallback } from "react";
 import { useFlashcards } from "./hooks/useFlashcards";
 import { ExistingFlashcardList } from "./ExistingFlashcardList";
 import { FlashcardFilters } from "./FlashcardFilters";
@@ -9,6 +9,30 @@ import { EditFlashcardModal } from "./EditFlashcardModal";
 import { CreateFlashcardModal } from "./CreateFlashcardModal";
 import { Button } from "@/components/ui/button";
 import type { FlashcardViewModel } from "../types";
+
+interface FlashcardsViewState {
+  modals: {
+    edit: {
+      isOpen: boolean;
+      flashcard: FlashcardViewModel | null;
+    };
+    create: {
+      isOpen: boolean;
+    };
+  };
+}
+
+const initialState: FlashcardsViewState = {
+  modals: {
+    edit: {
+      isOpen: false,
+      flashcard: null,
+    },
+    create: {
+      isOpen: false,
+    },
+  },
+};
 
 export function FlashcardsView() {
   const {
@@ -25,14 +49,63 @@ export function FlashcardsView() {
     goToPage,
   } = useFlashcards();
 
-  const [editingFlashcard, setEditingFlashcard] = React.useState<FlashcardViewModel | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+  const [state, setState] = useState<FlashcardsViewState>(initialState);
 
-  const handleUpdateFlashcard = React.useCallback(
+  const handleEditFlashcard = useCallback((flashcard: FlashcardViewModel) => {
+    setState((prev) => ({
+      ...prev,
+      modals: {
+        ...prev.modals,
+        edit: {
+          isOpen: true,
+          flashcard,
+        },
+      },
+    }));
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      modals: {
+        ...prev.modals,
+        edit: {
+          isOpen: false,
+          flashcard: null,
+        },
+      },
+    }));
+  }, []);
+
+  const handleOpenCreateModal = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      modals: {
+        ...prev.modals,
+        create: {
+          isOpen: true,
+        },
+      },
+    }));
+  }, []);
+
+  const handleCloseCreateModal = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      modals: {
+        ...prev.modals,
+        create: {
+          isOpen: false,
+        },
+      },
+    }));
+  }, []);
+
+  const handleUpdateFlashcard = useCallback(
     async (id: string, front: string, back: string) => {
       try {
         await updateFlashcard(id, front, back);
-        setEditingFlashcard(null); // Close modal after successful update
+        handleCloseEditModal();
       } catch (error) {
         console.error("Error updating flashcard:", error);
       }
@@ -57,7 +130,7 @@ export function FlashcardsView() {
           counts={statusCounts}
           isLoading={isLoading}
         />
-        <Button onClick={() => setIsCreateModalOpen(true)}>
+        <Button onClick={handleOpenCreateModal}>
           <Plus className="w-4 h-4 mr-2" />
           Add Flashcard
         </Button>
@@ -71,7 +144,7 @@ export function FlashcardsView() {
         <>
           <ExistingFlashcardList
             flashcards={flashcards}
-            onEdit={setEditingFlashcard}
+            onEdit={handleEditFlashcard}
             onDelete={deleteFlashcard}
             onStatusChange={updateFlashcardStatus}
           />
@@ -83,13 +156,13 @@ export function FlashcardsView() {
       )}
 
       <EditFlashcardModal
-        flashcard={editingFlashcard}
-        isOpen={editingFlashcard !== null}
+        flashcard={state.modals.edit.flashcard}
+        isOpen={state.modals.edit.isOpen}
         onSave={handleUpdateFlashcard}
-        onCancel={() => setEditingFlashcard(null)}
+        onCancel={handleCloseEditModal}
       />
 
-      <CreateFlashcardModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <CreateFlashcardModal isOpen={state.modals.create.isOpen} onClose={handleCloseCreateModal} />
     </div>
   );
 }
