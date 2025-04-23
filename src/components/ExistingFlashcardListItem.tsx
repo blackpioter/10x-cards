@@ -100,7 +100,7 @@ function ExistingFlashcardListItemComponent({
           <Button
             size="sm"
             variant="ghost"
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-100"
             onClick={onEdit}
             title={flashcard.operations.edit.error || "Edit flashcard"}
             disabled={flashcard.operations.edit.isLoading}

@@ -267,6 +267,9 @@ export function useFlashcards({
               : f
           ),
         }));
+
+        // Refresh the flashcards list to ensure we have the latest data
+        fetchFlashcards(state.pagination.page, statusFilter);
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -287,7 +290,7 @@ export function useFlashcards({
         }));
       }
     },
-    [toViewModel]
+    [toViewModel, fetchFlashcards, state.pagination.page, statusFilter]
   );
 
   // Function to change page

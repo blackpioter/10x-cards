@@ -61,6 +61,7 @@ export type FlashcardUpdateDto = Partial<{
   back: string;
   source: FlashcardSource;
   generation_id: string | null;
+  status: "pending" | "accepted" | "rejected";
 }>;
 
 /* ============================================================

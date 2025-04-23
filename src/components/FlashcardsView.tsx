@@ -7,6 +7,8 @@ import FlashcardStats from "./FlashcardStats";
 import { PaginationControls } from "./PaginationControls";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Loader2 } from "lucide-react";
+import { EditFlashcardModal } from "./EditFlashcardModal";
+import type { FlashcardViewModel } from "../types";
 
 export function FlashcardsView() {
   const {
@@ -22,6 +24,20 @@ export function FlashcardsView() {
     filterByStatus,
     goToPage,
   } = useFlashcards();
+
+  const [editingFlashcard, setEditingFlashcard] = React.useState<FlashcardViewModel | null>(null);
+
+  const handleUpdateFlashcard = React.useCallback(
+    async (id: string, front: string, back: string) => {
+      try {
+        await updateFlashcard(id, front, back);
+        setEditingFlashcard(null); // Close modal after successful update
+      } catch (error) {
+        console.error("Error updating flashcard:", error);
+      }
+    },
+    [updateFlashcard]
+  );
 
   if (error) {
     return (
@@ -79,7 +95,7 @@ export function FlashcardsView() {
         <>
           <ExistingFlashcardList
             flashcards={flashcards}
-            onEdit={(flashcard) => updateFlashcard(flashcard.id, flashcard.front, flashcard.back)}
+            onEdit={setEditingFlashcard}
             onDelete={deleteFlashcard}
             onStatusChange={updateFlashcardStatus}
           />
@@ -89,6 +105,13 @@ export function FlashcardsView() {
           </div>
         </>
       )}
+
+      <EditFlashcardModal
+        flashcard={editingFlashcard}
+        isOpen={editingFlashcard !== null}
+        onSave={handleUpdateFlashcard}
+        onCancel={() => setEditingFlashcard(null)}
+      />
     </div>
   );
 }

@@ -13,6 +13,11 @@ const flashcardUpdateSchema = z.object({
     })
     .optional(),
   generation_id: z.string().uuid("Invalid generation ID format").nullable().optional(),
+  status: z
+    .enum(["pending", "accepted", "rejected"], {
+      errorMap: () => ({ message: "Status must be either 'pending', 'accepted', or 'rejected'" }),
+    })
+    .optional(),
 });
 
 export const prerender = false;
