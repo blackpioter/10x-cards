@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "./ui/button";
 import { useLocation } from "@/lib/hooks/useLocation";
+import { LogOut } from "lucide-react";
 
 const navItems = [
   { href: "/flashcards", label: "Flashcards" },
@@ -10,20 +11,8 @@ const navItems = [
 export function TopNavbar() {
   const location = useLocation();
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to logout");
-      }
-
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
+  const handleLogout = () => {
+    window.location.href = "/logout";
   };
 
   return (
@@ -43,7 +32,13 @@ export function TopNavbar() {
               </a>
             ))}
           </div>
-          <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={handleLogout}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="text-muted-foreground hover:text-destructive hover:border-destructive/50"
+          >
+            <LogOut className="w-4 h-4" />
             Logout
           </Button>
         </div>
