@@ -1,13 +1,22 @@
+import React from "react";
 import { Button } from "./ui/button";
-import type { FlashcardStatus } from "./FlashcardsView";
+import { Input } from "./ui/input";
+import type { FlashcardStatus } from "../types";
 
 interface FlashcardFiltersProps {
-  currentFilter: FlashcardStatus;
-  onFilterChange: (filter: FlashcardStatus) => void;
+  textFilter: string;
+  onTextFilterChange: (value: string) => void;
+  statusFilter: FlashcardStatus;
+  onStatusFilterChange: (filter: FlashcardStatus) => void;
 }
 
-export default function FlashcardFilters({ currentFilter, onFilterChange }: FlashcardFiltersProps) {
-  const filters: { value: FlashcardStatus; label: string }[] = [
+export function FlashcardFilters({
+  textFilter,
+  onTextFilterChange,
+  statusFilter,
+  onStatusFilterChange,
+}: FlashcardFiltersProps) {
+  const statusFilters: { value: FlashcardStatus; label: string }[] = [
     { value: "all", label: "All" },
     { value: "pending", label: "Pending" },
     { value: "accepted", label: "Accepted" },
@@ -15,17 +24,28 @@ export default function FlashcardFilters({ currentFilter, onFilterChange }: Flas
   ];
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {filters.map(({ value, label }) => (
-        <Button
-          key={value}
-          variant={currentFilter === value ? "default" : "outline"}
-          onClick={() => onFilterChange(value)}
-          size="sm"
-        >
-          {label}
-        </Button>
-      ))}
+    <div className="space-y-4">
+      <div>
+        <Input
+          type="text"
+          placeholder="Search flashcards..."
+          value={textFilter}
+          onChange={(e) => onTextFilterChange(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {statusFilters.map(({ value, label }) => (
+          <Button
+            key={value}
+            variant={statusFilter === value ? "default" : "outline"}
+            onClick={() => onStatusFilterChange(value)}
+            size="sm"
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

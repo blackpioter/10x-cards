@@ -1,3 +1,4 @@
+import React, { useCallback } from "react";
 import type { FlashcardViewModel } from "../types";
 import { Card, CardContent, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
@@ -12,13 +13,13 @@ interface ExistingFlashcardListItemProps {
   onStatusChange: (id: string, newStatus: FlashcardActionStatus) => void;
 }
 
-export function ExistingFlashcardListItem({
+function ExistingFlashcardListItemComponent({
   flashcard,
   onEdit,
   onDelete,
   onStatusChange,
 }: ExistingFlashcardListItemProps) {
-  const getStatusColor = () => {
+  const getStatusColor = useCallback(() => {
     switch (flashcard.status) {
       case "accepted":
         return "bg-green-500/10 text-green-700 dark:text-green-400";
@@ -29,9 +30,17 @@ export function ExistingFlashcardListItem({
       default:
         return "bg-muted";
     }
-  };
+  }, [flashcard.status]);
 
-  const renderStatusButtons = () => {
+  const handleAccept = useCallback(() => {
+    onStatusChange(flashcard.id, "accepted");
+  }, [flashcard.id, onStatusChange]);
+
+  const handleReject = useCallback(() => {
+    onStatusChange(flashcard.id, "rejected");
+  }, [flashcard.id, onStatusChange]);
+
+  const renderStatusButtons = useCallback(() => {
     // Don't show the current status button
     const showAccept = flashcard.status !== "accepted";
     const showReject = flashcard.status !== "rejected";
@@ -47,7 +56,7 @@ export function ExistingFlashcardListItem({
             size="sm"
             variant="ghost"
             className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-100"
-            onClick={() => onStatusChange(flashcard.id, "accepted")}
+            onClick={handleAccept}
             title={error || "Accept flashcard"}
             disabled={isLoading}
           >
@@ -59,7 +68,7 @@ export function ExistingFlashcardListItem({
             size="sm"
             variant="ghost"
             className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
-            onClick={() => onStatusChange(flashcard.id, "rejected")}
+            onClick={handleReject}
             title={error || "Reject flashcard"}
             disabled={isLoading}
           >
@@ -68,7 +77,7 @@ export function ExistingFlashcardListItem({
         )}
       </>
     );
-  };
+  }, [flashcard.operations.statusChange, flashcard.status, handleAccept, handleReject]);
 
   return (
     <Card className="h-full flex flex-col">
@@ -121,3 +130,18 @@ export function ExistingFlashcardListItem({
     </Card>
   );
 }
+
+export const ExistingFlashcardListItem = React.memo(ExistingFlashcardListItemComponent, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  return (
+    prevProps.flashcard.front === nextProps.flashcard.front &&
+    prevProps.flashcard.back === nextProps.flashcard.back &&
+    prevProps.flashcard.status === nextProps.flashcard.status &&
+    prevProps.flashcard.operations.statusChange.isLoading === nextProps.flashcard.operations.statusChange.isLoading &&
+    prevProps.flashcard.operations.statusChange.error === nextProps.flashcard.operations.statusChange.error &&
+    prevProps.flashcard.operations.edit.isLoading === nextProps.flashcard.operations.edit.isLoading &&
+    prevProps.flashcard.operations.edit.error === nextProps.flashcard.operations.edit.error &&
+    prevProps.flashcard.operations.delete.isLoading === nextProps.flashcard.operations.delete.isLoading &&
+    prevProps.flashcard.operations.delete.error === nextProps.flashcard.operations.delete.error
+  );
+});
