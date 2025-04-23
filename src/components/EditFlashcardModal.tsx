@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,12 @@ interface EditFlashcardModalProps {
 }
 
 export function EditFlashcardModal({ flashcard, isOpen, onSave, onCancel }: EditFlashcardModalProps) {
-  const [front, setFront] = React.useState("");
-  const [back, setBack] = React.useState("");
-  const [errors, setErrors] = React.useState<{ front?: string; back?: string }>({});
+  const [front, setFront] = useState("");
+  const [back, setBack] = useState("");
+  const [errors, setErrors] = useState<{ front?: string; back?: string }>({});
 
   // Reset form when flashcard changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (flashcard) {
       setFront(flashcard.front);
       setBack(flashcard.back);
@@ -52,7 +52,7 @@ export function EditFlashcardModal({ flashcard, isOpen, onSave, onCancel }: Edit
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+    <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onCancel()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit Flashcard</DialogTitle>
