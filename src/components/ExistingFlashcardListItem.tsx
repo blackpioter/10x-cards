@@ -1,16 +1,23 @@
 import type { FlashcardViewModel } from "../types";
 import { Card, CardContent, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, Check, X, Loader2 } from "lucide-react";
 import { Badge } from "./ui/badge";
+import type { FlashcardActionStatus } from "../types";
 
 interface ExistingFlashcardListItemProps {
   flashcard: FlashcardViewModel;
   onEdit: () => void;
   onDelete: () => void;
+  onStatusChange: (id: string, newStatus: FlashcardActionStatus) => void;
 }
 
-export function ExistingFlashcardListItem({ flashcard, onEdit, onDelete }: ExistingFlashcardListItemProps) {
+export function ExistingFlashcardListItem({
+  flashcard,
+  onEdit,
+  onDelete,
+  onStatusChange,
+}: ExistingFlashcardListItemProps) {
   const getStatusColor = () => {
     switch (flashcard.status) {
       case "accepted":
@@ -22,6 +29,45 @@ export function ExistingFlashcardListItem({ flashcard, onEdit, onDelete }: Exist
       default:
         return "bg-muted";
     }
+  };
+
+  const renderStatusButtons = () => {
+    // Don't show the current status button
+    const showAccept = flashcard.status !== "accepted";
+    const showReject = flashcard.status !== "rejected";
+
+    if (!showAccept && !showReject) return null;
+
+    const { isLoading, error } = flashcard.operations.statusChange;
+
+    return (
+      <>
+        {showAccept && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-100"
+            onClick={() => onStatusChange(flashcard.id, "accepted")}
+            title={error || "Accept flashcard"}
+            disabled={isLoading}
+          >
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          </Button>
+        )}
+        {showReject && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+            onClick={() => onStatusChange(flashcard.id, "rejected")}
+            title={error || "Reject flashcard"}
+            disabled={isLoading}
+          >
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+          </Button>
+        )}
+      </>
+    );
   };
 
   return (
@@ -39,19 +85,38 @@ export function ExistingFlashcardListItem({ flashcard, onEdit, onDelete }: Exist
           {flashcard.status}
         </Badge>
       </CardContent>
-      <CardFooter className="px-4 py-3 bg-muted/50 flex justify-end gap-2">
-        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={onEdit} title="Edit flashcard">
-          <Edit2 className="h-4 w-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 w-8 p-0 hover:text-destructive"
-          onClick={onDelete}
-          title="Delete flashcard"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      <CardFooter className="px-4 py-3 bg-muted/50 flex justify-between gap-2">
+        <div className="flex gap-2">{renderStatusButtons()}</div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            onClick={onEdit}
+            title={flashcard.operations.edit.error || "Edit flashcard"}
+            disabled={flashcard.operations.edit.isLoading}
+          >
+            {flashcard.operations.edit.isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Edit2 className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0 hover:text-destructive"
+            onClick={onDelete}
+            title={flashcard.operations.delete.error || "Delete flashcard"}
+            disabled={flashcard.operations.delete.isLoading}
+          >
+            {flashcard.operations.delete.isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

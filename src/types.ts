@@ -22,6 +22,9 @@ export type GenerationErrorLog = Database["public"]["Tables"]["generation_error_
    Flashcard Types
    ============================================================ */
 
+export type FlashcardStatus = "pending" | "accepted" | "rejected" | "all";
+export type FlashcardActionStatus = Exclude<FlashcardStatus, "all">;
+
 /**
  * DTO representing a flashcard as returned by the API.
  *
@@ -30,7 +33,9 @@ export type GenerationErrorLog = Database["public"]["Tables"]["generation_error_
 export type FlashcardDto = Pick<
   Flashcard,
   "id" | "front" | "back" | "source" | "generation_id" | "created_at" | "updated_at"
->;
+> & {
+  status: FlashcardActionStatus;
+};
 
 // Flashcard List Response DTO based on the API plan
 export interface FlashcardListResponseDto {
@@ -178,10 +183,20 @@ export interface FlashcardReviewDto {
  * Extends FlashcardDto with UI-specific fields.
  */
 export interface FlashcardViewModel extends FlashcardDto {
-  isEditing?: boolean;
-  isSaving?: boolean;
-  errorMessage?: string;
-  status: "pending" | "accepted" | "rejected";
+  operations: {
+    statusChange: {
+      isLoading: boolean;
+      error: string | null;
+    };
+    delete: {
+      isLoading: boolean;
+      error: string | null;
+    };
+    edit: {
+      isLoading: boolean;
+      error: string | null;
+    };
+  };
 }
 
 /**

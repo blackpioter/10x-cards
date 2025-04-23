@@ -1,13 +1,15 @@
 import type { FlashcardViewModel } from "../types";
 import { ExistingFlashcardListItem } from "./ExistingFlashcardListItem";
+import type { FlashcardActionStatus } from "./FlashcardsView";
 
 interface ExistingFlashcardListProps {
   flashcards: FlashcardViewModel[];
   onEdit: (flashcard: FlashcardViewModel) => void;
   onDelete: (id: string) => void;
+  onStatusChange: (id: string, newStatus: FlashcardActionStatus) => void;
 }
 
-export function ExistingFlashcardList({ flashcards, onEdit, onDelete }: ExistingFlashcardListProps) {
+export function ExistingFlashcardList({ flashcards, onEdit, onDelete, onStatusChange }: ExistingFlashcardListProps) {
   if (flashcards.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -24,6 +26,7 @@ export function ExistingFlashcardList({ flashcards, onEdit, onDelete }: Existing
           flashcard={flashcard}
           onEdit={() => onEdit(flashcard)}
           onDelete={() => onDelete(flashcard.id)}
+          onStatusChange={onStatusChange}
         />
       ))}
     </div>
