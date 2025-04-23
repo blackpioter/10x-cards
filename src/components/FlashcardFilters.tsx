@@ -1,51 +1,36 @@
 import React from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import type { FlashcardStatus } from "../types";
+import { Button } from "./ui/button";
 
 interface FlashcardFiltersProps {
-  textFilter: string;
-  onTextFilterChange: (value: string) => void;
   statusFilter: FlashcardStatus;
-  onStatusFilterChange: (filter: FlashcardStatus) => void;
+  onStatusFilterChange: (status: FlashcardStatus) => void;
 }
 
-export function FlashcardFilters({
-  textFilter,
-  onTextFilterChange,
-  statusFilter,
-  onStatusFilterChange,
-}: FlashcardFiltersProps) {
-  const statusFilters: { value: FlashcardStatus; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: "pending", label: "Pending" },
-    { value: "accepted", label: "Accepted" },
-    { value: "rejected", label: "Rejected" },
-  ];
-
+export function FlashcardFilters({ statusFilter, onStatusFilterChange }: FlashcardFiltersProps) {
   return (
-    <div className="space-y-4">
-      <div>
-        <Input
-          type="text"
-          placeholder="Search flashcards..."
-          value={textFilter}
-          onChange={(e) => onTextFilterChange(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {statusFilters.map(({ value, label }) => (
-          <Button
-            key={value}
-            variant={statusFilter === value ? "default" : "outline"}
-            onClick={() => onStatusFilterChange(value)}
-            size="sm"
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
+    <div className="flex flex-wrap gap-2">
+      <Button variant={statusFilter === "all" ? "default" : "outline"} onClick={() => onStatusFilterChange("all")}>
+        All
+      </Button>
+      <Button
+        variant={statusFilter === "pending" ? "default" : "outline"}
+        onClick={() => onStatusFilterChange("pending")}
+      >
+        Pending
+      </Button>
+      <Button
+        variant={statusFilter === "accepted" ? "default" : "outline"}
+        onClick={() => onStatusFilterChange("accepted")}
+      >
+        Accepted
+      </Button>
+      <Button
+        variant={statusFilter === "rejected" ? "default" : "outline"}
+        onClick={() => onStatusFilterChange("rejected")}
+      >
+        Rejected
+      </Button>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Pagination,
   PaginationContent,
@@ -8,59 +9,59 @@ import {
   PaginationPrevious,
 } from "./ui/pagination";
 import type { PaginationDto } from "../types";
-import type { MouseEvent } from "react";
 
 interface PaginationControlsProps {
   pagination: PaginationDto;
   onPageChange: (page: number) => void;
 }
 
-export default function PaginationControls({ pagination, onPageChange }: PaginationControlsProps) {
+export function PaginationControls({ pagination, onPageChange }: PaginationControlsProps) {
   const { page, total_pages } = pagination;
 
   // Generate array of page numbers to show
   const getPageNumbers = () => {
-    const pages: number[] = [];
+    const pages: (number | "ellipsis")[] = [];
     const maxVisiblePages = 5;
 
     if (total_pages <= maxVisiblePages) {
-      // Show all pages if total is less than or equal to maxVisiblePages
-      for (let i = 1; i <= total_pages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Always show first page
-      pages.push(1);
+      // Show all pages if total pages is less than or equal to max visible pages
+      return Array.from({ length: total_pages }, (_, i) => i + 1);
+    }
 
-      // Calculate start and end of the middle section
-      let start = Math.max(2, page - 1);
-      let end = Math.min(total_pages - 1, page + 1);
+    // Always show first page
+    pages.push(1);
 
-      // Adjust if we're near the start
-      if (page <= 3) {
-        end = 4;
-      }
-      // Adjust if we're near the end
-      if (page >= total_pages - 2) {
-        start = total_pages - 3;
-      }
+    // Calculate start and end of the middle section
+    let startPage = Math.max(2, page - 1);
+    let endPage = Math.min(total_pages - 1, page + 1);
 
-      // Add ellipsis after first page if needed
-      if (start > 2) {
-        pages.push(-1); // -1 represents ellipsis
-      }
+    // Adjust if we're near the start
+    if (page <= 3) {
+      endPage = 4;
+    }
 
-      // Add middle pages
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
+    // Adjust if we're near the end
+    if (page >= total_pages - 2) {
+      startPage = total_pages - 3;
+    }
 
-      // Add ellipsis before last page if needed
-      if (end < total_pages - 1) {
-        pages.push(-1); // -1 represents ellipsis
-      }
+    // Add ellipsis if there's a gap after page 1
+    if (startPage > 2) {
+      pages.push("ellipsis");
+    }
 
-      // Always show last page
+    // Add middle pages
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    // Add ellipsis if there's a gap before the last page
+    if (endPage < total_pages - 1) {
+      pages.push("ellipsis");
+    }
+
+    // Always show last page
+    if (total_pages > 1) {
       pages.push(total_pages);
     }
 
@@ -75,31 +76,17 @@ export default function PaginationControls({ pagination, onPageChange }: Paginat
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationPrevious
-            href="#"
-            onClick={(e: MouseEvent<HTMLAnchorElement>) => {
-              e.preventDefault();
-              if (page > 1) onPageChange(page - 1);
-            }}
-            className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-          />
+          <PaginationPrevious onClick={() => onPageChange(page - 1)} disabled={page === 1} size="default" />
         </PaginationItem>
 
-        {getPageNumbers().map((pageNum, idx) =>
-          pageNum === -1 ? (
-            <PaginationItem key={`ellipsis-${idx}`}>
+        {getPageNumbers().map((pageNum, index) =>
+          pageNum === "ellipsis" ? (
+            <PaginationItem key={`ellipsis-${index}`}>
               <PaginationEllipsis />
             </PaginationItem>
           ) : (
             <PaginationItem key={pageNum}>
-              <PaginationLink
-                href="#"
-                onClick={(e: MouseEvent<HTMLAnchorElement>) => {
-                  e.preventDefault();
-                  onPageChange(pageNum);
-                }}
-                isActive={pageNum === page}
-              >
+              <PaginationLink isActive={pageNum === page} onClick={() => onPageChange(pageNum)} size="default">
                 {pageNum}
               </PaginationLink>
             </PaginationItem>
@@ -107,14 +94,7 @@ export default function PaginationControls({ pagination, onPageChange }: Paginat
         )}
 
         <PaginationItem>
-          <PaginationNext
-            href="#"
-            onClick={(e: MouseEvent<HTMLAnchorElement>) => {
-              e.preventDefault();
-              if (page < total_pages) onPageChange(page + 1);
-            }}
-            className={page >= total_pages ? "pointer-events-none opacity-50" : ""}
-          />
+          <PaginationNext onClick={() => onPageChange(page + 1)} disabled={page === total_pages} size="default" />
         </PaginationItem>
       </PaginationContent>
     </Pagination>
