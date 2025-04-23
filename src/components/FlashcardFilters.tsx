@@ -1,4 +1,3 @@
-import React from "react";
 import type { FlashcardStatus } from "../types";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
