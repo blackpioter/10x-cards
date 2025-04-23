@@ -27,6 +27,7 @@ A web application that generates educational flashcards using AI and supports ma
 - **Styling:** Tailwind CSS 4, Shadcn/ui
 - **Backend:** Supabase (PostgreSQL, authentication)
 - **AI Integration:** Utilizes services via Openrouter.ai for generating flashcards
+- **Testing:** Vitest, React Testing Library for unit tests, Playwright for E2E tests
 - **CI/CD & Hosting:** GitHub Actions and DigitalOcean (Docker-based deployment)
 
 ## Getting Started Locally
