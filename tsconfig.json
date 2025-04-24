@@ -11,6 +11,8 @@
       "~/*": ["./src/*"]
     },
     "moduleResolution": "bundler",
+    "module": "ESNext",
+    "noEmit": true,
     "allowImportingTsExtensions": true,
     "types": ["vitest/globals", "@testing-library/jest-dom", "@playwright/test"]
   }
