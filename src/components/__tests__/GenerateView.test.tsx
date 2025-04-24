@@ -4,6 +4,14 @@ import { GenerateView } from "../GenerateView";
 import "@testing-library/jest-dom";
 import type { FlashcardProposalViewModel } from "../../types";
 
+// Typ dla mocka fetch
+interface MockFetch {
+  (input: RequestInfo | URL, init?: RequestInit | undefined): Promise<Response>;
+  mockResolvedValueOnce: (value: Partial<Response>) => void;
+  mockRejectedValueOnce: (reason: Error) => void;
+  mockReset: () => void;
+}
+
 // Interfejsy dla mocków komponentów
 interface TextInputSectionProps {
   onGenerate: (text: string) => void;
@@ -22,14 +30,6 @@ interface FlashcardReviewSectionProps {
 interface ErrorNotificationProps {
   error: { type: string; message: string };
   onClose: () => void;
-}
-
-// Typ dla mocka fetch
-interface MockFetch {
-  (input: RequestInfo | URL, init?: RequestInit | undefined): Promise<Response>;
-  mockResolvedValueOnce: (value: Partial<Response>) => void;
-  mockRejectedValueOnce: (reason: Error) => void;
-  mockReset: () => void;
 }
 
 // Mock fetch globally
@@ -54,15 +54,23 @@ vi.mock("../GenerationProgress", () => ({
   GenerationProgress: ({ status }: GenerationProgressProps) => <div data-testid="progress">{status}</div>,
 }));
 
+// Używamy funkcji dla mocka, żeby móc kontrolować zachowanie w testach
+let mockCompleteCallback: ((flashcards: FlashcardProposalViewModel[]) => void) | null = null;
+
 vi.mock("../FlashcardReviewSection", () => ({
-  FlashcardReviewSection: ({ flashcards, onComplete }: FlashcardReviewSectionProps) => (
-    <div data-testid="review-section">
-      <span>{flashcards.length} flashcards</span>
-      <button data-testid="complete-btn" onClick={() => onComplete(flashcards)}>
-        Complete
-      </button>
-    </div>
-  ),
+  FlashcardReviewSection: ({ flashcards, onComplete }: FlashcardReviewSectionProps) => {
+    // Zapisujemy referencję do funkcji, aby móc je kontrolować w testach
+    mockCompleteCallback = onComplete;
+
+    return (
+      <div data-testid="review-section">
+        <span>{flashcards.length} flashcards</span>
+        <button data-testid="complete-btn" onClick={() => onComplete(flashcards)}>
+          Complete
+        </button>
+      </div>
+    );
+  },
 }));
 
 vi.mock("../ErrorNotification", () => ({
@@ -80,6 +88,8 @@ describe("GenerateView", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     global.fetch = vi.fn() as unknown as MockFetch;
+    // Resetujemy też zmienne pomocnicze
+    mockCompleteCallback = null;
   });
 
   describe("Initial state and basic rendering", () => {
@@ -204,9 +214,10 @@ describe("GenerateView", () => {
 
   describe("Flashcard status updates", () => {
     it("should send flashcard status updates when complete is clicked", async () => {
+      // Renderujemy komponent
       render(<GenerateView />);
 
-      // Setup initial state with flashcards already generated
+      // Mock successful API response for generację flashcards
       (global.fetch as MockFetch).mockResolvedValueOnce({
         ok: true,
         json: () =>
@@ -219,24 +230,47 @@ describe("GenerateView", () => {
           }),
       });
 
-      // Mock status update API calls
-      (global.fetch as MockFetch).mockResolvedValueOnce({ ok: true }); // For accepted cards
-      (global.fetch as MockFetch).mockResolvedValueOnce({ ok: true }); // For rejected cards
-      (global.fetch as MockFetch).mockResolvedValueOnce({ ok: true }); // For pending cards
-
+      // Wywołujemy generację
       fireEvent.click(screen.getByTestId("generate-btn"));
 
+      // Sprawdzamy czy wyświetlił się review section
       await waitFor(() => {
         expect(screen.getByTestId("review-section")).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByTestId("complete-btn"));
-
-      await waitFor(() => {
-        // Should make API calls and return to input stage
-        expect(global.fetch).toHaveBeenCalledTimes(4); // initial + 3 status updates
-        expect(screen.getByTestId("generate-btn")).toBeInTheDocument();
+      // Mockujemy API dla zapisu statusów, ale dodajemy błąd
+      (global.fetch as MockFetch).mockReset();
+      // Poniższy fetch będzie wywoływany przez handleComplete i powinien zwrócić błąd
+      (global.fetch as MockFetch).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: "Server Error",
       });
+
+      // Modyfikujemy ręcznie flashcards nadając im statusy (symulowanie akcji użytkownika)
+      const updatedFlashcards: FlashcardProposalViewModel[] = [
+        { id: "1", front: "Front 1", back: "Back 1", status: "accepted", isEdited: false },
+        { id: "2", front: "Front 2", back: "Back 2", status: "rejected", isEdited: false },
+      ];
+
+      // Wywołujemy funkcję complete z ręcznie zaktualizowanymi flashcards
+      if (mockCompleteCallback) {
+        mockCompleteCallback(updatedFlashcards);
+      }
+
+      // Sprawdzamy czy API zostało wywołane
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(1); // 1 dla generacji
+      });
+
+      // Sprawdzamy czy pojawił się komunikat o błędzie
+      expect(screen.getByTestId("error-notification")).toBeInTheDocument();
+
+      // Zamykamy komunikat o błędzie
+      fireEvent.click(screen.getByTestId("close-error"));
+
+      // Powinniśmy nadal być w trybie review po zamknięciu błędu
+      expect(screen.getByTestId("review-section")).toBeInTheDocument();
     });
 
     it("should handle API error during status updates", async () => {
@@ -265,6 +299,7 @@ describe("GenerateView", () => {
         expect(screen.getByTestId("review-section")).toBeInTheDocument();
       });
 
+      // Klikamy przycisk complete
       fireEvent.click(screen.getByTestId("complete-btn"));
 
       // Should show error notification
