@@ -61,22 +61,29 @@ export function LoginForm() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-test-id="login-form-container">
       {state.error && (
         <ErrorNotification
+          data-test-id="login-error-message"
           error={{ type: "validation", message: state.error }}
           onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
         />
       )}
 
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">Enter your credentials to sign in</p>
+        <h1 className="text-2xl font-semibold tracking-tight" data-test-id="login-header">
+          Welcome back
+        </h1>
+        <p className="text-sm text-muted-foreground" data-test-id="login-subheader">
+          Enter your credentials to sign in
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" data-test-id="login-form">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" data-test-id="login-email-label">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
@@ -87,11 +94,14 @@ export function LoginForm() {
             }
             disabled={state.isLoading}
             required
+            data-test-id="login-email-input"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password" data-test-id="login-password-label">
+            Password
+          </Label>
           <Input
             id="password"
             type="password"
@@ -101,22 +111,23 @@ export function LoginForm() {
             }
             disabled={state.isLoading}
             required
+            data-test-id="login-password-input"
           />
         </div>
 
         <div className="text-sm text-right">
-          <a href="/forgot-password" className="text-primary hover:underline">
+          <a href="/forgot-password" className="text-primary hover:underline" data-test-id="login-forgot-password-link">
             Forgot your password?
           </a>
         </div>
 
-        <Button type="submit" className="w-full" disabled={state.isLoading}>
+        <Button type="submit" className="w-full" disabled={state.isLoading} data-test-id="login-submit-button">
           {state.isLoading ? "Signing in..." : "Sign in"}
         </Button>
 
-        <div className="text-center text-sm">
+        <div className="text-center text-sm" data-test-id="login-register-section">
           Don&apos;t have an account?{" "}
-          <a href="/register" className="text-primary hover:underline">
+          <a href="/register" className="text-primary hover:underline" data-test-id="login-register-link">
             Sign up
           </a>
         </div>

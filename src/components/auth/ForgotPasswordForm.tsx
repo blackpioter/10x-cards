@@ -55,22 +55,29 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-test-id="forgot-password-container">
       {state.error && (
         <ErrorNotification
+          data-test-id="forgot-password-error"
           error={{ type: "validation", message: state.error }}
           onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
         />
       )}
 
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Forgot password?</h1>
-        <p className="text-sm text-muted-foreground">Enter your email address and we&apos;ll send you a reset link</p>
+        <h1 className="text-2xl font-semibold tracking-tight" data-test-id="forgot-password-header">
+          Forgot password?
+        </h1>
+        <p className="text-sm text-muted-foreground" data-test-id="forgot-password-subheader">
+          Enter your email address and we&apos;ll send you a reset link
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" data-test-id="forgot-password-form">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" data-test-id="forgot-password-email-label">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
@@ -81,16 +88,22 @@ export function ForgotPasswordForm() {
             }
             disabled={state.isLoading}
             required
+            data-test-id="forgot-password-email-input"
           />
         </div>
 
-        <Button type="submit" className="w-full" disabled={state.isLoading}>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={state.isLoading}
+          data-test-id="forgot-password-submit-button"
+        >
           {state.isLoading ? "Sending reset link..." : "Send reset link"}
         </Button>
 
-        <div className="text-center text-sm">
+        <div className="text-center text-sm" data-test-id="forgot-password-login-section">
           Remember your password?{" "}
-          <a href="/login" className="text-primary hover:underline">
+          <a href="/login" className="text-primary hover:underline" data-test-id="forgot-password-login-link">
             Sign in
           </a>
         </div>
