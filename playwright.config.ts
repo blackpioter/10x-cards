@@ -39,6 +39,7 @@ export default defineConfig({
 
   use: {
     baseURL: "http://localhost:3000",
+    testIdAttribute: "data-test-id",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -54,14 +55,9 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        // Auth state handling
-        storageState: process.env.AUTH_STATE_PATH,
       },
     },
   ],
-
-  // Global setup to handle authentication state
-  globalSetup: "./src/tests/e2e/global-setup.ts",
 
   // Output test results
   outputDir: "test-results",
