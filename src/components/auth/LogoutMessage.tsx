@@ -15,6 +15,13 @@ export function LogoutMessage() {
   useEffect(() => {
     const performLogout = async () => {
       try {
+        // Show success message immediately, then attempt logout
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          success: "Signing out...",
+        }));
+
         const response = await fetch("/api/auth/logout", {
           method: "POST",
           headers: {
@@ -31,7 +38,7 @@ export function LogoutMessage() {
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          success: data.message,
+          success: data.message || "Successfully logged out",
         }));
 
         // Redirect to login page after 2 seconds

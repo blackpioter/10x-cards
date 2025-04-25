@@ -42,12 +42,16 @@ export function ForgotPasswordForm() {
 
   if (state.isSubmitted) {
     return (
-      <div className="space-y-6 text-center">
+      <div className="space-y-6 text-center" data-test-id="forgot-password-success-container">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
-          <p className="text-sm text-muted-foreground">We have sent a password reset link to your email address.</p>
+          <h1 className="text-2xl font-semibold tracking-tight" data-test-id="forgot-password-success-title">
+            Check your email
+          </h1>
+          <p className="text-sm text-muted-foreground" data-test-id="forgot-password-success-message">
+            We have sent a password reset link to your email address.
+          </p>
         </div>
-        <Button asChild className="w-full">
+        <Button asChild className="w-full" data-test-id="forgot-password-back-to-login">
           <a href="/login">Back to login</a>
         </Button>
       </div>
