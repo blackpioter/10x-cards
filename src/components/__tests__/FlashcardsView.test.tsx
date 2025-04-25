@@ -69,9 +69,9 @@ vi.mock("../hooks/useFlashcards", () => ({
 // Mock the child components
 vi.mock("../ExistingFlashcardList", () => ({
   ExistingFlashcardList: ({ flashcards, onEdit, onDelete, onStatusChange }: ExistingFlashcardListProps) => (
-    <div data-testid="flashcard-list">
+    <div data-test-id="flashcard-list">
       {flashcards.map((card) => (
-        <div key={card.id} data-testid={`flashcard-${card.id}`}>
+        <div key={card.id} data-test-id={`flashcard-${card.id}`}>
           <button onClick={() => onEdit(card)}>Edit</button>
           <button onClick={() => onDelete(card.id)}>Delete</button>
           <button onClick={() => onStatusChange(card.id, "accepted")}>Accept</button>
@@ -83,7 +83,7 @@ vi.mock("../ExistingFlashcardList", () => ({
 
 vi.mock("../FlashcardFilters", () => ({
   FlashcardFilters: ({ statusFilter, onStatusFilterChange }: FlashcardFiltersProps) => (
-    <select data-testid="status-filter" value={statusFilter} onChange={(e) => onStatusFilterChange(e.target.value)}>
+    <select data-test-id="status-filter" value={statusFilter} onChange={(e) => onStatusFilterChange(e.target.value)}>
       <option value="all">All</option>
       <option value="pending">Pending</option>
       <option value="accepted">Accepted</option>
@@ -94,7 +94,7 @@ vi.mock("../FlashcardFilters", () => ({
 
 vi.mock("../PaginationControls", () => ({
   PaginationControls: ({ pagination, onPageChange }: PaginationControlsProps) => (
-    <div data-testid="pagination">
+    <div data-test-id="pagination">
       <span>
         Page {pagination.page} of {pagination.total_pages}
       </span>
@@ -108,18 +108,18 @@ vi.mock("../EditFlashcardModal", () => ({
   EditFlashcardModal: ({ flashcard, isOpen, onSave, onCancel }: EditFlashcardModalProps) =>
     isOpen &&
     flashcard && (
-      <div data-testid="edit-modal">
-        <input data-testid="front-input" defaultValue={flashcard.front || ""} />
-        <input data-testid="back-input" defaultValue={flashcard.back || ""} />
+      <div data-test-id="edit-modal">
+        <input data-test-id="front-input" defaultValue={flashcard.front || ""} />
+        <input data-test-id="back-input" defaultValue={flashcard.back || ""} />
         <button
-          data-testid="save-btn"
+          data-test-id="save-btn"
           onClick={() => {
             onSave(flashcard.id, "Updated Front", "Updated Back");
           }}
         >
           Save
         </button>
-        <button data-testid="cancel-btn" onClick={onCancel}>
+        <button data-test-id="cancel-btn" onClick={onCancel}>
           Cancel
         </button>
       </div>
@@ -129,8 +129,8 @@ vi.mock("../EditFlashcardModal", () => ({
 vi.mock("../CreateFlashcardModal", () => ({
   CreateFlashcardModal: ({ isOpen, onClose }: CreateFlashcardModalProps) =>
     isOpen && (
-      <div data-testid="create-modal">
-        <button data-testid="close-create-modal" onClick={onClose}>
+      <div data-test-id="create-modal">
+        <button data-test-id="close-create-modal" onClick={onClose}>
           Close
         </button>
       </div>
@@ -139,8 +139,8 @@ vi.mock("../CreateFlashcardModal", () => ({
 
 // Mock Lucide icons
 vi.mock("lucide-react", () => ({
-  Loader2: () => <div data-testid="loader-icon" />,
-  Plus: () => <div data-testid="plus-icon" />,
+  Loader2: () => <div data-test-id="loader-icon" />,
+  Plus: () => <div data-test-id="plus-icon" />,
 }));
 
 import { useFlashcards } from "../hooks/useFlashcards";
