@@ -35,13 +35,13 @@ export function ErrorNotification({ error, onClose, autoHideDuration = 5000 }: E
   };
 
   return (
-    <Alert variant="destructive" className="relative">
-      <XCircle className="h-4 w-4" />
-      <AlertTitle>{getErrorTitle()}</AlertTitle>
-      <AlertDescription>{error.message}</AlertDescription>
+    <Alert variant="destructive" className="relative" data-test-id="error-notification">
+      <XCircle className="h-4 w-4" data-test-id="error-icon" />
+      <AlertTitle data-test-id="error-title">{getErrorTitle()}</AlertTitle>
+      <AlertDescription data-test-id="error-message">{error.message}</AlertDescription>
       {error.action && (
         <div className="mt-2">
-          <Button variant="outline" size="sm" onClick={error.action.handler}>
+          <Button variant="outline" size="sm" onClick={error.action.handler} data-test-id="error-action-button">
             {error.action.label}
           </Button>
         </div>
@@ -50,6 +50,7 @@ export function ErrorNotification({ error, onClose, autoHideDuration = 5000 }: E
         onClick={onClose}
         className="absolute top-4 right-4 text-destructive-foreground/70 hover:text-destructive-foreground"
         aria-label="Close error notification"
+        data-test-id="close-error"
       >
         <XCircle className="h-4 w-4" />
       </button>

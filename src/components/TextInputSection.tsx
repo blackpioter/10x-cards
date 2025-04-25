@@ -41,9 +41,10 @@ export function TextInputSection({ onGenerate, isGenerating }: TextInputSectionP
   const isValid = !error && characterCount >= 1000 && characterCount <= 10000;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} data-test-id="text-input-form" className="space-y-4">
       <div className="space-y-2">
         <Textarea
+          data-test-id="source-text-input"
           value={text}
           onChange={handleTextChange}
           placeholder="Enter your text here (1000-10000 characters)"
@@ -51,13 +52,15 @@ export function TextInputSection({ onGenerate, isGenerating }: TextInputSectionP
           disabled={isGenerating}
         />
         <div className="flex justify-between text-sm">
-          <span className={error ? "text-destructive" : "text-muted-foreground"}>
+          <span data-test-id="validation-message" className={error ? "text-destructive" : "text-muted-foreground"}>
             {error || `${characterCount} characters`}
           </span>
-          <span className="text-muted-foreground">{Math.max(1000 - characterCount, 0)} characters needed</span>
+          <span data-test-id="characters-needed" className="text-muted-foreground">
+            {Math.max(1000 - characterCount, 0)} characters needed
+          </span>
         </div>
       </div>
-      <Button type="submit" disabled={!isValid || isGenerating} className="w-full">
+      <Button data-test-id="generate-button" type="submit" disabled={!isValid || isGenerating} className="w-full">
         {isGenerating ? "Generating..." : "Generate Flashcards"}
       </Button>
     </form>
