@@ -29,3 +29,9 @@ test-results/
 
 # coverage
 coverage/
+
+# playwright
+playwright-report/
+
+# playwright auth state
+.auth/
