@@ -18,7 +18,7 @@ export class LogoutPage extends BasePage {
 
   // Navigation
   async goto() {
-    await this.page.goto("/logout");
+    await this.page.goto("http://localhost:3000/logout");
     await this.waitForElement("logout-container");
   }
 
@@ -46,7 +46,7 @@ export class LogoutPage extends BasePage {
     await expect(this.successMessage).toBeVisible();
     await expect(this.redirectMessage).toBeVisible();
     // Wait for redirect
-    await this.waitForUrl("/login");
+    await this.waitForUrl("http://localhost:3000/login");
   }
 
   async expectError(message: string) {
@@ -56,6 +56,6 @@ export class LogoutPage extends BasePage {
   // Utility methods
   async waitForRedirect() {
     await this.page.waitForTimeout(2000); // Match the component's timeout
-    await this.waitForUrl("/login");
+    await this.waitForUrl("http://localhost:3000/login");
   }
 }

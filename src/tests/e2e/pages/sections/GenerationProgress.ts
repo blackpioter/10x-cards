@@ -29,8 +29,8 @@ export class GenerationProgress {
     }
   }
 
-  async isVisible() {
-    await expect(this.container).toBeVisible();
+  async isVisible(): Promise<boolean> {
+    return await this.container.isVisible();
   }
 
   async waitForGeneration() {

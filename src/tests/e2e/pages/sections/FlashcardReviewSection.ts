@@ -81,8 +81,8 @@ export class FlashcardReviewSection {
     await flashcard.locator('[data-test-id^="restore-button-"]').click();
   }
 
-  async isVisible() {
-    await expect(this.container).toBeVisible();
+  async isVisible(): Promise<boolean> {
+    return await this.container.isVisible();
   }
 
   async waitForFlashcards() {

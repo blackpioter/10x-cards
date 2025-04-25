@@ -1,4 +1,5 @@
-import { Page, Locator, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
+import type { Page, Locator } from "@playwright/test";
 import { TextInputSection } from "./sections/TextInputSection";
 import { GenerationProgress } from "./sections/GenerationProgress";
 import { FlashcardReviewSection } from "./sections/FlashcardReviewSection";
@@ -41,9 +42,15 @@ export class GenerateViewPage {
   }
 
   async getCurrentStage(): Promise<"input" | "generating" | "review"> {
-    if (await this.textInputSection.isVisible()) return "input";
-    if (await this.generationProgress.isVisible()) return "generating";
-    if (await this.flashcardReviewSection.isVisible()) return "review";
+    const inputVisible = await this.textInputSection.isVisible();
+    if (inputVisible) return "input";
+
+    const generatingVisible = await this.generationProgress.isVisible();
+    if (generatingVisible) return "generating";
+
+    const reviewVisible = await this.flashcardReviewSection.isVisible();
+    if (reviewVisible) return "review";
+
     throw new Error("Unknown stage");
   }
 }

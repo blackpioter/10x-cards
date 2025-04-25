@@ -47,8 +47,8 @@ export class TextInputSection {
     await this.generateButton.click();
   }
 
-  async isVisible() {
-    await expect(this.container).toBeVisible();
+  async isVisible(): Promise<boolean> {
+    return await this.container.isVisible();
   }
 
   async waitForValidation() {
