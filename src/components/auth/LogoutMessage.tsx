@@ -15,13 +15,6 @@ export function LogoutMessage() {
   useEffect(() => {
     const performLogout = async () => {
       try {
-        // Show success message immediately, then attempt logout
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          success: "Signing out...",
-        }));
-
         const response = await fetch("/api/auth/logout", {
           method: "POST",
           headers: {
@@ -38,7 +31,7 @@ export function LogoutMessage() {
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          success: data.message || "Successfully logged out",
+          success: data.message,
         }));
 
         // Redirect to login page after 2 seconds
@@ -58,26 +51,23 @@ export function LogoutMessage() {
   }, []);
 
   return (
-    <div className="space-y-6" data-test-id="logout-container">
+    <div className="space-y-6">
       {state.error && (
         <ErrorNotification
-          data-test-id="logout-error"
           error={{ type: "validation", message: state.error }}
           onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
         />
       )}
 
       {state.success && (
-        <div className="bg-green-50 text-green-800 p-4 rounded-md" data-test-id="logout-success-message">
+        <div className="bg-green-50 text-green-800 p-4 rounded-md">
           <p>{state.success}</p>
-          <p className="text-sm mt-2" data-test-id="logout-redirect-message">
-            Redirecting to login page...
-          </p>
+          <p className="text-sm mt-2">Redirecting to login page...</p>
         </div>
       )}
 
       {state.isLoading && (
-        <div className="text-center" data-test-id="logout-loading">
+        <div className="text-center">
           <p>Logging out...</p>
         </div>
       )}

@@ -44,14 +44,14 @@ vi.mock("global", async () => {
 // Mock child components to focus on unit testing logic
 vi.mock("../TextInputSection", () => ({
   TextInputSection: ({ onGenerate }: TextInputSectionProps) => (
-    <button data-test-id="generate-btn" onClick={() => onGenerate("Sample text")}>
+    <button data-testid="generate-btn" onClick={() => onGenerate("Sample text")}>
       Generate
     </button>
   ),
 }));
 
 vi.mock("../GenerationProgress", () => ({
-  GenerationProgress: ({ status }: GenerationProgressProps) => <div data-test-id="progress">{status}</div>,
+  GenerationProgress: ({ status }: GenerationProgressProps) => <div data-testid="progress">{status}</div>,
 }));
 
 // Używamy funkcji dla mocka, żeby móc kontrolować zachowanie w testach
@@ -63,9 +63,9 @@ vi.mock("../FlashcardReviewSection", () => ({
     mockCompleteCallback = onComplete;
 
     return (
-      <div data-test-id="review-section">
+      <div data-testid="review-section">
         <span>{flashcards.length} flashcards</span>
-        <button data-test-id="complete-btn" onClick={() => onComplete(flashcards)}>
+        <button data-testid="complete-btn" onClick={() => onComplete(flashcards)}>
           Complete
         </button>
       </div>
@@ -75,9 +75,9 @@ vi.mock("../FlashcardReviewSection", () => ({
 
 vi.mock("../ErrorNotification", () => ({
   ErrorNotification: ({ error, onClose }: ErrorNotificationProps) => (
-    <div data-test-id="error-notification">
+    <div data-testid="error-notification">
       {error.message}
-      <button data-test-id="close-error" onClick={onClose}>
+      <button data-testid="close-error" onClick={onClose}>
         Close
       </button>
     </div>

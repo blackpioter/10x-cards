@@ -42,16 +42,12 @@ export function ForgotPasswordForm() {
 
   if (state.isSubmitted) {
     return (
-      <div className="space-y-6 text-center" data-test-id="forgot-password-success-container">
+      <div className="space-y-6 text-center">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight" data-test-id="forgot-password-success-title">
-            Check your email
-          </h1>
-          <p className="text-sm text-muted-foreground" data-test-id="forgot-password-success-message">
-            We have sent a password reset link to your email address.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
+          <p className="text-sm text-muted-foreground">We have sent a password reset link to your email address.</p>
         </div>
-        <Button asChild className="w-full" data-test-id="forgot-password-back-to-login">
+        <Button asChild className="w-full">
           <a href="/login">Back to login</a>
         </Button>
       </div>
@@ -59,29 +55,22 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <div className="space-y-6" data-test-id="forgot-password-container">
+    <div className="space-y-6">
       {state.error && (
         <ErrorNotification
-          data-test-id="forgot-password-error"
           error={{ type: "validation", message: state.error }}
           onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
         />
       )}
 
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight" data-test-id="forgot-password-header">
-          Forgot password?
-        </h1>
-        <p className="text-sm text-muted-foreground" data-test-id="forgot-password-subheader">
-          Enter your email address and we&apos;ll send you a reset link
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">Forgot password?</h1>
+        <p className="text-sm text-muted-foreground">Enter your email address and we&apos;ll send you a reset link</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4" data-test-id="forgot-password-form">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" data-test-id="forgot-password-email-label">
-            Email
-          </Label>
+          <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
@@ -92,22 +81,16 @@ export function ForgotPasswordForm() {
             }
             disabled={state.isLoading}
             required
-            data-test-id="forgot-password-email-input"
           />
         </div>
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={state.isLoading}
-          data-test-id="forgot-password-submit-button"
-        >
+        <Button type="submit" className="w-full" disabled={state.isLoading}>
           {state.isLoading ? "Sending reset link..." : "Send reset link"}
         </Button>
 
-        <div className="text-center text-sm" data-test-id="forgot-password-login-section">
+        <div className="text-center text-sm">
           Remember your password?{" "}
-          <a href="/login" className="text-primary hover:underline" data-test-id="forgot-password-login-link">
+          <a href="/login" className="text-primary hover:underline">
             Sign in
           </a>
         </div>

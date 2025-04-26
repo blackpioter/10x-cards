@@ -140,10 +140,9 @@ export function GenerateView() {
   };
 
   return (
-    <div className="space-y-6" data-test-id="generate-view">
+    <div className="space-y-6">
       {state.error && (
         <ErrorNotification
-          data-test-id="error-notification"
           error={{
             type: "api",
             message: state.error,
@@ -152,18 +151,12 @@ export function GenerateView() {
         />
       )}
 
-      {state.stage === "input" && (
-        <TextInputSection data-test-id="text-input-section" onGenerate={handleGenerate} isGenerating={false} />
-      )}
+      {state.stage === "input" && <TextInputSection onGenerate={handleGenerate} isGenerating={false} />}
 
-      {state.stage === "generating" && <GenerationProgress data-test-id="generation-progress" status="generating" />}
+      {state.stage === "generating" && <GenerationProgress status="generating" />}
 
       {state.stage === "review" && state.proposals && (
-        <FlashcardReviewSection
-          data-test-id="flashcard-review-section"
-          flashcards={state.proposals.proposals}
-          onComplete={handleComplete}
-        />
+        <FlashcardReviewSection flashcards={state.proposals.proposals} onComplete={handleComplete} />
       )}
     </div>
   );
