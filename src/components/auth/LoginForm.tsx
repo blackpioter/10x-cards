@@ -63,23 +63,23 @@ export function LoginForm() {
   };
 
   return (
-    <div className="space-y-6" data-test-id="login-form-container">
+    <div className="space-y-6" data-testid="login-form-container">
       {state.error && (
         <ErrorNotification
           error={{ type: "validation", message: state.error }}
           onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
-          data-test-id="login-error-notification"
+          data-testid="login-error-notification"
         />
       )}
 
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight" data-test-id="login-header">
+        <h1 className="text-2xl font-semibold tracking-tight" data-testid="login-header">
           Welcome back
         </h1>
         <p className="text-sm text-muted-foreground">Enter your credentials to sign in</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4" data-test-id="login-form">
+      <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -92,7 +92,7 @@ export function LoginForm() {
             }
             disabled={state.isLoading}
             required
-            data-test-id="login-email-input"
+            data-testid="login-email-input"
           />
         </div>
 
@@ -107,12 +107,12 @@ export function LoginForm() {
             }
             disabled={state.isLoading}
             required
-            data-test-id="login-password-input"
+            data-testid="login-password-input"
           />
         </div>
 
         <div className="text-sm text-right">
-          <a href="/forgot-password" className="text-primary hover:underline" data-test-id="forgot-password-link">
+          <a href="/forgot-password" className="text-primary hover:underline" data-testid="forgot-password-link">
             Forgot your password?
           </a>
         </div>
@@ -121,14 +121,14 @@ export function LoginForm() {
           type="submit"
           className="w-full"
           disabled={state.isLoading || !isFormValid}
-          data-test-id="login-submit-button"
+          data-testid="login-submit-button"
         >
           {state.isLoading ? "Signing in..." : "Sign in"}
         </Button>
 
         <div className="text-center text-sm">
           Don&apos;t have an account?{" "}
-          <a href="/register" className="text-primary hover:underline" data-test-id="register-link">
+          <a href="/register" className="text-primary hover:underline" data-testid="register-link">
             Sign up
           </a>
         </div>
