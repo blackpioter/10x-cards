@@ -18,6 +18,8 @@ export function LoginForm() {
     isLoading: false,
   });
 
+  const isFormValid = state.email.trim() !== "" && state.password.trim() !== "";
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
@@ -115,7 +117,12 @@ export function LoginForm() {
           </a>
         </div>
 
-        <Button type="submit" className="w-full" disabled={state.isLoading} data-test-id="login-submit-button">
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={state.isLoading || !isFormValid}
+          data-test-id="login-submit-button"
+        >
           {state.isLoading ? "Signing in..." : "Sign in"}
         </Button>
 
