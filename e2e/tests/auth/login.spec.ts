@@ -30,6 +30,12 @@ test.describe("Login Form", () => {
     await expect(loginPage.submitButton).toBeDisabled();
   });
 
+  test("should enable submit button when form is valid", async () => {
+    await loginPage.emailInput.fill(E2E_USERNAME);
+    await loginPage.passwordInput.fill(E2E_PASSWORD);
+    await expect(loginPage.submitButton).toBeEnabled();
+  });
+
   test("should show validation error for empty fields", async () => {
     await loginPage.emailInput.fill(E2E_USERNAME);
     await loginPage.submitButton.click();
