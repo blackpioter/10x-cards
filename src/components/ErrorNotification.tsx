@@ -8,9 +8,15 @@ interface ErrorNotificationProps {
   error: ErrorState;
   onClose: () => void;
   autoHideDuration?: number;
+  "data-testid"?: string;
 }
 
-export function ErrorNotification({ error, onClose, autoHideDuration = 5000 }: ErrorNotificationProps) {
+export function ErrorNotification({
+  error,
+  onClose,
+  autoHideDuration = 5000,
+  "data-testid": testId,
+}: ErrorNotificationProps) {
   // Auto-hide the notification after the specified duration
   React.useEffect(() => {
     if (autoHideDuration) {
@@ -35,7 +41,7 @@ export function ErrorNotification({ error, onClose, autoHideDuration = 5000 }: E
   };
 
   return (
-    <Alert variant="destructive" className="relative">
+    <Alert variant="destructive" className="relative" data-testid={testId}>
       <XCircle className="h-4 w-4" />
       <AlertTitle>{getErrorTitle()}</AlertTitle>
       <AlertDescription>{error.message}</AlertDescription>
