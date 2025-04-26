@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { LoginPage } from "../../pages/login.page";
 
+// Get test credentials from environment variables
+const E2E_USERNAME = process.env.E2E_USERNAME ?? "test@example.com";
+const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "password123";
+
 test.describe("Login Form", () => {
   let loginPage: LoginPage;
 
@@ -27,13 +31,13 @@ test.describe("Login Form", () => {
   });
 
   test("should enable submit button when form is valid", async () => {
-    await loginPage.emailInput.fill("test@example.com");
-    await loginPage.passwordInput.fill("password123");
+    await loginPage.emailInput.fill(E2E_USERNAME);
+    await loginPage.passwordInput.fill(E2E_PASSWORD);
     await expect(loginPage.submitButton).toBeEnabled();
   });
 
   test("should show validation error for empty fields", async () => {
-    await loginPage.emailInput.fill("test@example.com");
+    await loginPage.emailInput.fill(E2E_USERNAME);
     await loginPage.submitButton.click();
     await expect(loginPage.errorNotification).toContainText("Please fill in all fields");
 
@@ -42,8 +46,8 @@ test.describe("Login Form", () => {
   });
 
   test("should show loading state during authentication", async () => {
-    await loginPage.emailInput.fill("test@example.com");
-    await loginPage.passwordInput.fill("password123");
+    await loginPage.emailInput.fill(E2E_USERNAME);
+    await loginPage.passwordInput.fill(E2E_PASSWORD);
     await loginPage.submitButton.click();
 
     await expect(loginPage.submitButton).toHaveText("Signing in...");
@@ -52,8 +56,8 @@ test.describe("Login Form", () => {
   });
 
   test("should redirect to /generate on successful login", async () => {
-    await loginPage.login("valid@example.com", "correctpassword");
-    await loginPage.page.waitForURL("/generate");
+    await loginPage.login(E2E_USERNAME, E2E_PASSWORD);
+    await expect(loginPage.page).toHaveURL("/generate");
   });
 
   test("should show API error notification on failed login", async () => {
@@ -75,17 +79,36 @@ test.describe("Login Form", () => {
     await expect(loginPage.page).toHaveURL("/register");
   });
 
-  test("should handle network errors", async ({ page }) => {
+  test("should handle network errors", async () => {
     // Simulate offline state
-    await page.route("/api/auth/login", (route) => route.abort("failed"));
+    await loginPage.page.route("/api/auth/login", (route) => route.abort("failed"));
 
-    await loginPage.login("test@example.com", "password123");
+    // Create a promise that resolves when the route is called
+    const waitForRequest = loginPage.page.waitForRequest("/api/auth/login");
+
+    await loginPage.login(E2E_USERNAME, E2E_PASSWORD);
+
+    // Wait for the request to be made and aborted
+    await waitForRequest.catch((error) => {
+      // Expected error from aborted request
+      if (!(error instanceof Error) || !error.message.includes("aborted")) {
+        throw error;
+      }
+    });
+
+    // Wait for error notification and verify error type and message
+    await expect(loginPage.errorNotification).toBeVisible({ timeout: 3000 });
     await expect(loginPage.errorNotification).toContainText("Failed to sign in");
+
+    // Verify form is re-enabled after error
+    await expect(loginPage.emailInput).toBeEnabled();
+    await expect(loginPage.passwordInput).toBeEnabled();
+    await expect(loginPage.submitButton).toBeEnabled();
   });
 
   test("should validate email format", async () => {
     await loginPage.emailInput.fill("invalid-email");
-    await loginPage.passwordInput.fill("password123");
+    await loginPage.passwordInput.fill(E2E_PASSWORD);
     await loginPage.submitButton.click();
 
     // Browser's native email validation should prevent submission
