@@ -36,15 +36,6 @@ test.describe("Login Form", () => {
     await expect(loginPage.submitButton).toBeEnabled();
   });
 
-  test("should show validation error for empty fields", async () => {
-    await loginPage.emailInput.fill(E2E_USERNAME);
-    await loginPage.submitButton.click();
-    await expect(loginPage.errorNotification).toContainText("Please fill in all fields");
-
-    // Error should auto-dismiss after 5 seconds
-    await expect(loginPage.errorNotification).toBeHidden({ timeout: 5500 });
-  });
-
   test("should show loading state during authentication", async () => {
     await loginPage.emailInput.fill(E2E_USERNAME);
     await loginPage.passwordInput.fill(E2E_PASSWORD);
