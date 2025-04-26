@@ -4,27 +4,38 @@ import path from "path";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
+const testDir = path.join(process.cwd(), "e2e");
+const coverageDir = path.join(process.cwd(), "coverage");
+
 export default defineConfig({
-  testDir: "./e2e",
+  testDir,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [["html", { outputFolder: "./coverage/e2e-report" }], ["list"]],
+  reporter: [
+    [
+      "html",
+      {
+        outputFolder: path.join(coverageDir, "e2e-report"),
+        open: "never",
+      },
+    ],
+    ["list"],
+  ],
   use: {
-    baseURL: "http://localhost:4321",
+    baseURL: "http://localhost:3000",
     trace: "on-first-retry",
-    screenshot: "only-on-failure",
   },
+  outputDir: path.join(coverageDir, "screenshots"),
+  snapshotDir: path.join(coverageDir, "screenshots"),
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        screenshot: "only-on-failure",
+      },
     },
   ],
-  webServer: {
-    command: "npm run preview",
-    port: 4321,
-    reuseExistingServer: !process.env.CI,
-  },
 });
