@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorNotification } from "../ErrorNotification";
+import type { ErrorState } from "../../types";
 
 interface LoginFormState {
   email: string;
   password: string;
   isLoading: boolean;
-  error?: string;
+  error?: ErrorState;
 }
 
 export function LoginForm() {
@@ -30,7 +31,7 @@ export function LoginForm() {
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          error: "Please fill in all fields",
+          error: { type: "validation", message: "Please fill in all fields" },
         }));
         return;
       }
@@ -57,7 +58,15 @@ export function LoginForm() {
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : "An unexpected error occurred",
+        error: {
+          type: error instanceof TypeError && error.message === "Failed to fetch" ? "network" : "api",
+          message:
+            error instanceof TypeError && error.message === "Failed to fetch"
+              ? "Failed to sign in"
+              : error instanceof Error
+                ? error.message
+                : "An unexpected error occurred",
+        },
       }));
     }
   };
@@ -66,7 +75,7 @@ export function LoginForm() {
     <div className="space-y-6" data-testid="login-form-container">
       {state.error && (
         <ErrorNotification
-          error={{ type: "validation", message: state.error }}
+          error={{ type: state.error.type, message: state.error.message }}
           onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
           data-testid="login-error-notification"
         />
