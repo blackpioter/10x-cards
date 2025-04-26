@@ -1,68 +1,124 @@
-# Testowanie w projekcie 10x Cards
+# Testing in 10x Cards Project
 
-Ten dokument zawiera wskazówki dotyczące testowania aplikacji 10x Cards.
+This document contains guidelines for testing the 10x Cards application.
 
-## Testy jednostkowe (Vitest)
+## Unit Testing (Vitest)
 
-Testy jednostkowe są używane do testowania pojedynczych komponentów i funkcji. Używamy Vitest jako naszego frameworka testowego.
+Unit tests are used to test individual components and functions. We use Vitest as our testing framework.
 
-### Uruchamianie testów jednostkowych
+### Running Unit Tests
 
 ```bash
-# Uruchomienie wszystkich testów
+# Run all tests
 npm test
 
-# Uruchomienie testów w trybie watch (obserwowanie zmian)
+# Run tests in watch mode
 npm run test:watch
 
-# Uruchomienie testów z interfejsem użytkownika
+# Run tests with UI
 npm run test:ui
 
-# Sprawdzenie pokrycia kodu testami
+# Check test coverage
 npm run test:coverage
 ```
 
-### Struktura testów jednostkowych
+### Unit Test Structure
 
-- Pliki testowe powinny być umieszczone obok testowanych plików z rozszerzeniem `.test.ts` lub `.test.tsx`
-- Używamy biblioteki `@testing-library/react` do testowania komponentów React
-- Używamy biblioteki `@testing-library/user-event` do symulowania interakcji użytkownika
-- Używamy biblioteki `msw` do mockowania żądań API
+Tests should follow this directory structure:
+```
+src/
+└── components/
+    ├── ComponentName/
+    │   ├── index.tsx
+    │   └── ComponentName.test.tsx
+    └── ...
+test/
+├── setup.ts
+├── helpers/
+│   ├── renderWithProviders.ts
+│   └── testUtils.ts
+└── fixtures/
+    └── testData.ts
+```
 
-## Testy E2E (Playwright)
+### Testing Tools
+- `@testing-library/react` for React component testing
+- `@testing-library/user-event` for user interaction simulation
+- `msw` for API request mocking
 
-Testy E2E są używane do testowania całej aplikacji z perspektywy użytkownika. Używamy Playwright jako naszego frameworka E2E.
+### Types of Tests
 
-### Uruchamianie testów E2E
+1. **Unit Tests**
+   - Test individual components and functions
+   - Focus on isolated behavior
+   - Use mocks for external dependencies
+
+2. **Integration Tests**
+   - Test component interactions
+   - Verify data flow between components
+   - Test hooks and context integration
+
+### Testing Best Practices
+
+1. **Component Testing**
+   - Test behavior, not implementation
+   - Use semantic queries (getByRole, getByText)
+   - Test user interactions
+   - Include accessibility testing
+
+2. **Code Organization**
+   - Keep tests close to components
+   - Use descriptive test names
+   - Group related tests with describe blocks
+   - Use beforeEach for common setup
+
+3. **Test Coverage**
+   - Maintain minimum 80% coverage
+   - Focus on critical business logic
+   - Test edge cases and error states
+   - Don't test implementation details
+
+4. **Mocking**
+   - Mock external dependencies
+   - Use MSW for API mocking
+   - Keep mocks simple and maintainable
+   - Reset mocks between tests
+
+## E2E Testing (Playwright)
+
+E2E tests verify the application from a user's perspective. We use Playwright as our E2E testing framework.
+
+### Running E2E Tests
 
 ```bash
-# Uruchomienie wszystkich testów E2E
+# Run all E2E tests
 npm run test:e2e
 
-# Uruchomienie testów E2E z interfejsem użytkownika
+# Run E2E tests with UI
 npm run test:e2e:ui
 
-# Generowanie kodu testów E2E przy użyciu codegen
+# Generate E2E test code
 npm run codegen
 ```
 
-### Struktura testów E2E
+### E2E Test Structure
 
-- Testy E2E znajdują się w katalogu `e2e`
-- Używamy wzorca Page Object Model (POM) do organizacji testów
-- Pliki stron znajdują się w katalogu `e2e/pages`
-- Dane testowe znajdują się w katalogu `e2e/fixtures`
-- Funkcje pomocnicze znajdują się w katalogu `e2e/utils`
+- E2E tests are in the `e2e` directory
+- Use Page Object Model (POM) pattern
+- Page files in `e2e/pages`
+- Test data in `e2e/fixtures`
+- Helper functions in `e2e/utils`
 
-## Najlepsze praktyki
+## CI/CD Integration
 
-1. Testuj zachowanie, a nie implementację
-2. Używaj testów jednostkowych dla logiki biznesowej i komponentów
-3. Używaj testów E2E dla kluczowych ścieżek użytkownika
-4. Izoluj testy, aby mogły być uruchamiane niezależnie
-5. Mockuj zewnętrzne zależności w testach jednostkowych
-6. Używaj rzeczywistych komponentów w testach jednostkowych, zamiast mockowanych
-7. Twórz deterministyczne testy (bez losowości)
-8. Unikaj testów, które zależą od konkretnych danych w bazie danych
-9. Wykorzystuj porównania wizualne w testach E2E dla weryfikacji interfejsu użytkownika
-10. Regularnie uruchamiaj testy jako część procesu CI/CD
+- All tests run on pull requests
+- Coverage reports generated automatically
+- E2E tests run on staging environment
+- Test failures block deployments
+
+## Debugging Tests
+
+- Use `test:ui` for interactive debugging
+- Check test coverage reports
+- Use test.only for focusing on specific tests
+- Enable debug logging when needed
