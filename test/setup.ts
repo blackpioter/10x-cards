@@ -4,17 +4,17 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 import { setupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
 
-// Rozszerzenie Vitest o matchers z Testing Library
+// Extend Vitest with Testing Library matchers
 expect.extend(matchers);
 
-// Czyszczenie po każdym teście
+// Cleanup after each test
 afterEach(() => {
   cleanup();
 });
 
-// Konfiguracja MSW (Mock Service Worker) dla mockowania API
+// Configure MSW (Mock Service Worker) for API mocking
 export const restHandlers = [
-  // Przykładowe handlery API
+  // Example API handlers
   http.get("/api/example", () => {
     return HttpResponse.json({ message: "Mocked response" });
   }),
@@ -22,7 +22,7 @@ export const restHandlers = [
 
 const server = setupServer(...restHandlers);
 
-// Startowanie i zatrzymywanie serwera MSW
+// Start and stop MSW server
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());

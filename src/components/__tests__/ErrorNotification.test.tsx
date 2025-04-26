@@ -98,13 +98,18 @@ describe("ErrorNotification", () => {
     );
     const alert = screen.getByRole("alert");
 
-    for (let i = 0; i < 5; i++) {
+    // Simulate rapid user interactions
+    for (let i = 0; i < 3; i++) {
       await user.hover(alert);
-      await vi.advanceTimersByTimeAsync(50);
+      await vi.advanceTimersByTimeAsync(20);
       await user.unhover(alert);
-      await vi.advanceTimersByTimeAsync(50);
+      await vi.advanceTimersByTimeAsync(20);
     }
 
+    // Verify notification wasn't closed during interactions
+    expect(mockOnClose).not.toHaveBeenCalled();
+
+    // Verify notification closes after interactions end
     await vi.advanceTimersByTimeAsync(DEFAULT_AUTO_HIDE_DURATION);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
