@@ -6,9 +6,14 @@ import { FlashcardList } from "./FlashcardList";
 interface FlashcardReviewSectionProps {
   flashcards: FlashcardProposalViewModel[];
   onComplete: (proposals: FlashcardProposalViewModel[]) => void;
+  "data-testid"?: string;
 }
 
-export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardReviewSectionProps) {
+export function FlashcardReviewSection({
+  flashcards,
+  onComplete,
+  "data-testid": testId = "flashcard-review-section",
+}: FlashcardReviewSectionProps) {
   const [proposals, setProposals] = React.useState<FlashcardProposalViewModel[]>(flashcards);
   const [filter, setFilter] = React.useState<"all" | "accepted" | "rejected">("all");
 
@@ -94,7 +99,7 @@ export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardRevi
   }, [proposals, filter]);
 
   return (
-    <div className="space-y-6" data-testid="flashcard-review-container">
+    <div className="space-y-6" data-testid={testId}>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">Review Flashcards</h2>

@@ -24,10 +24,7 @@ export function GenerationProgress({ status, progress, onCancel }: GenerationPro
   };
 
   return (
-    <div
-      className="flex flex-col items-center justify-center py-12 space-y-4"
-      data-testid="generation-progress-container"
-    >
+    <div className="flex flex-col items-center justify-center py-12 space-y-4" data-testid="generation-progress">
       <div className="flex items-center space-x-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" data-testid="loading-spinner" />
         <span className="text-lg text-muted-foreground" data-testid="generation-status">
