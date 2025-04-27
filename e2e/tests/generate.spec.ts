@@ -87,9 +87,9 @@ test.describe("Generate View", () => {
       );
     });
 
-    // Try to generate
-    await generatePage.enterText("A valid text that is definitely longer than 1000 characters...");
-    await generatePage.clickGenerate();
+    // Try to generate with valid text
+    await generatePage.enterText(MEMORY_TECHNIQUES_TEXT);
+    await generatePage.clickGenerate({ waitForProgress: false });
 
     // Verify error handling
     await generatePage.expectErrorVisible("API Error");
