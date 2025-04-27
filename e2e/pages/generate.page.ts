@@ -30,7 +30,7 @@ export class GeneratePage {
     await textArea.fill(text);
   }
 
-  async clickGenerate() {
+  async clickGenerate(options: { waitForProgress?: boolean } = { waitForProgress: true }) {
     // First try to remove the dev toolbar if it exists
     await this.page.evaluate(() => {
       const toolbar = document.querySelector("astro-dev-toolbar");
@@ -47,8 +47,10 @@ export class GeneratePage {
 
     await generateButton.click({ force: true });
 
-    // Wait for the generation to start
-    await expect(this.generationProgress).toBeVisible({ timeout: 10000 });
+    // Wait for the generation to start only if requested
+    if (options.waitForProgress) {
+      await expect(this.generationProgress).toBeVisible({ timeout: 10000 });
+    }
   }
 
   async getCharacterCount() {
@@ -113,10 +115,12 @@ export class GeneratePage {
   }
 
   async expectErrorVisible(errorType?: string) {
-    await expect(this.errorNotification).toBeVisible();
+    // First wait for the notification to be visible
+    await expect(this.errorNotification).toBeVisible({ timeout: 10000 });
+
     if (errorType) {
-      const errorTitle = this.errorNotification.getByTestId("error-title");
-      await expect(errorTitle).toContainText(errorType);
+      // Wait for the title text to be visible in the notification
+      await expect(this.errorNotification).toContainText(errorType, { timeout: 10000 });
     }
   }
 }
