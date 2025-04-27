@@ -94,18 +94,19 @@ export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardRevi
   }, [proposals, filter]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="flashcard-review-container">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">Review Flashcards</h2>
           <p className="text-sm text-muted-foreground">Review and edit the generated flashcards before saving them.</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2" data-testid="filter-buttons">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setFilter("all")}
             className={filter === "all" ? "bg-muted" : ""}
+            data-testid="filter-all"
           >
             All ({proposals.length})
           </Button>
@@ -114,6 +115,7 @@ export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardRevi
             size="sm"
             onClick={() => setFilter("accepted")}
             className={filter === "accepted" ? "bg-muted" : ""}
+            data-testid="filter-accepted"
           >
             Accepted ({stats.accepted})
           </Button>
@@ -122,6 +124,7 @@ export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardRevi
             size="sm"
             onClick={() => setFilter("rejected")}
             className={filter === "rejected" ? "bg-muted" : ""}
+            data-testid="filter-rejected"
           >
             Rejected ({stats.rejected})
           </Button>
@@ -133,6 +136,7 @@ export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardRevi
         onItemAction={handleItemAction}
         onBulkAction={handleBulkAction}
         stats={stats}
+        data-testid="flashcard-list"
       />
     </div>
   );

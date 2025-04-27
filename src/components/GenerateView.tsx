@@ -140,7 +140,7 @@ export function GenerateView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="generate-view">
       {state.error && (
         <ErrorNotification
           error={{
@@ -148,15 +148,22 @@ export function GenerateView() {
             message: state.error,
           }}
           onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
+          data-testid="error-notification"
         />
       )}
 
-      {state.stage === "input" && <TextInputSection onGenerate={handleGenerate} isGenerating={false} />}
+      {state.stage === "input" && (
+        <TextInputSection onGenerate={handleGenerate} isGenerating={false} data-testid="text-input-section" />
+      )}
 
-      {state.stage === "generating" && <GenerationProgress status="generating" />}
+      {state.stage === "generating" && <GenerationProgress status="generating" data-testid="generation-progress" />}
 
       {state.stage === "review" && state.proposals && (
-        <FlashcardReviewSection flashcards={state.proposals.proposals} onComplete={handleComplete} />
+        <FlashcardReviewSection
+          flashcards={state.proposals.proposals}
+          onComplete={handleComplete}
+          data-testid="flashcard-review-section"
+        />
       )}
     </div>
   );
