@@ -1,8 +1,8 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
-import type { GenerateFlashcardsCommand } from "../../types";
-import { createGenerationService } from "../../lib/generation.service";
-import { createSupabaseServerInstance } from "../../db/supabase.client";
+import type { GenerateFlashcardsCommand } from "../../../types";
+import { createGenerationService } from "../../../lib/generation.service";
+import { createSupabaseServerInstance } from "../../../db/supabase.client";
 
 // Prevent prerendering of API route
 export const prerender = false;
