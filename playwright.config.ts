@@ -37,6 +37,10 @@ export default defineConfig({
   snapshotDir: path.join(coverageDir, "screenshots"),
   projects: [
     {
+      name: "cleanup db",
+      testMatch: /global\.teardown\.ts/,
+    },
+    {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
@@ -47,6 +51,7 @@ export default defineConfig({
           args: ["--disable-dev-shm-usage"],
         },
       },
+      teardown: "cleanup db",
     },
   ],
 });
