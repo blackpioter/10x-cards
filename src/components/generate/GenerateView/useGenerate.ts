@@ -75,9 +75,8 @@ export function useGenerate() {
 
   /**
    * Handles completion of the flashcard generation process.
-   * @param proposals - List of flashcard proposals. Used for logging completion stats.
    */
-  const handleComplete = async (proposals: FlashcardProposalViewModel[]) => {
+  const handleComplete = async () => {
     if (!state.generationId) {
       setState((prev) => ({
         ...prev,
@@ -87,18 +86,6 @@ export function useGenerate() {
     }
 
     try {
-      // Log completion stats for debugging
-      console.debug("Completing generation", {
-        generationId: state.generationId,
-        totalProposals: proposals.length,
-        accepted: proposals.filter((p) => p.status === "accepted").length,
-        rejected: proposals.filter((p) => p.status === "rejected").length,
-        edited: proposals.filter((p) => p.isEdited).length,
-      });
-
-      // Note: We don't need to manually update flashcard statuses here
-      // The backend (generation.service.ts) handles this when saving to Supabase
-
       setState({
         stage: STATES.INPUT,
         error: undefined,

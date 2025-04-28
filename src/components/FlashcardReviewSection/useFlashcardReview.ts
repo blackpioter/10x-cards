@@ -1,35 +1,18 @@
 import * as React from "react";
-import { Button } from "@/components/ui/button";
-import type { FlashcardProposalViewModel } from "../types";
-import { FlashcardList } from "./FlashcardList";
+import type { FlashcardProposalViewModel } from "../../types";
+import { useFlashcardStats } from "./useFlashcardStats";
 
-interface FlashcardReviewSectionProps {
-  flashcards: FlashcardProposalViewModel[];
-  onComplete: (proposals: FlashcardProposalViewModel[]) => void;
-  "data-testid"?: string;
-}
-
-export function FlashcardReviewSection({
-  flashcards,
-  onComplete,
-  "data-testid": testId = "flashcard-review-section",
-}: FlashcardReviewSectionProps) {
-  const [proposals, setProposals] = React.useState<FlashcardProposalViewModel[]>(flashcards);
+export function useFlashcardReview(
+  initialFlashcards: FlashcardProposalViewModel[],
+  onComplete: (proposals: FlashcardProposalViewModel[]) => void
+) {
+  const [proposals, setProposals] = React.useState<FlashcardProposalViewModel[]>(initialFlashcards);
   const [filter, setFilter] = React.useState<"all" | "accepted" | "rejected">("all");
   const [pendingUpdates, setPendingUpdates] = React.useState<Map<string, "accepted" | "rejected" | "pending">>(
     new Map()
   );
 
-  const stats = React.useMemo(() => {
-    return proposals.reduce(
-      (acc, card) => {
-        acc[card.status]++;
-        if (card.isEdited) acc.edited++;
-        return acc;
-      },
-      { pending: 0, accepted: 0, rejected: 0, edited: 0 }
-    );
-  }, [proposals]);
+  const stats = useFlashcardStats(proposals);
 
   const updateFlashcardStatus = React.useCallback(async (updates: Map<string, "accepted" | "rejected" | "pending">) => {
     try {
@@ -192,51 +175,13 @@ export function FlashcardReviewSection({
     return proposals.filter((card) => card.status === filter);
   }, [proposals, filter]);
 
-  return (
-    <div className="space-y-6" data-testid={testId}>
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">Review Flashcards</h2>
-          <p className="text-sm text-muted-foreground">Review and edit the generated flashcards before saving them.</p>
-        </div>
-        <div className="flex items-center space-x-2" data-testid="filter-buttons">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setFilter("all")}
-            className={filter === "all" ? "bg-muted" : ""}
-            data-testid="filter-all"
-          >
-            All ({proposals.length})
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setFilter("accepted")}
-            className={filter === "accepted" ? "bg-muted" : ""}
-            data-testid="filter-accepted"
-          >
-            Accepted ({stats.accepted})
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setFilter("rejected")}
-            className={filter === "rejected" ? "bg-muted" : ""}
-            data-testid="filter-rejected"
-          >
-            Rejected ({stats.rejected})
-          </Button>
-        </div>
-      </div>
-
-      <FlashcardList
-        proposals={filteredProposals}
-        onItemAction={handleItemAction}
-        onBulkAction={handleBulkAction}
-        stats={stats}
-        data-testid="flashcard-list"
-      />
-    </div>
-  );
+  return {
+    proposals,
+    stats,
+    filter,
+    setFilter,
+    handleItemAction,
+    handleBulkAction,
+    filteredProposals,
+  };
 }

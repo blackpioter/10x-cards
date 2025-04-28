@@ -1,7 +1,7 @@
 import { useGenerate } from "./useGenerate";
 import { TextInputSection } from "../../TextInputSection";
 import { GenerationProgress } from "../../GenerationProgress";
-import { FlashcardReviewSection } from "../../FlashcardReviewSection";
+import { FlashcardReviewSection } from "../../FlashcardReviewSection/";
 import { ErrorNotification } from "../../common/ErrorNotification";
 
 export function GenerateView() {
