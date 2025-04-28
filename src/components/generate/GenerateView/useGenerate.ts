@@ -1,9 +1,10 @@
 import { useState } from "react";
 import type {
   GenerateViewState,
-  FlashcardProposalDto,
   FlashcardProposalViewModel,
   FlashcardProposalListViewModel,
+  FlashcardProposalDto,
+  GenerationCreateResponseDto,
 } from "../../../types";
 
 const STATES = {
@@ -11,11 +12,6 @@ const STATES = {
   GENERATING: "generating",
   REVIEW: "review",
 } as const;
-
-interface GenerationResponse {
-  generation_id: string;
-  flashcard_proposals: FlashcardProposalDto[];
-}
 
 export function useGenerate() {
   const [state, setState] = useState<GenerateViewState>({
@@ -37,17 +33,20 @@ export function useGenerate() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate flashcards");
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate flashcards");
       }
 
-      const data: GenerationResponse = await response.json();
+      const data: GenerationCreateResponseDto = await response.json();
 
-      const proposalViewModels: FlashcardProposalViewModel[] = data.flashcard_proposals.map((proposal) => ({
-        ...proposal,
-        status: "pending",
-        isEdited: false,
-        isSelected: true,
-      }));
+      const proposalViewModels: FlashcardProposalViewModel[] = data.flashcard_proposals.map(
+        (proposal: FlashcardProposalDto) => ({
+          ...proposal,
+          status: "pending",
+          isEdited: false,
+          isSelected: true,
+        })
+      );
 
       const proposalList: FlashcardProposalListViewModel = {
         proposals: proposalViewModels,
@@ -74,6 +73,10 @@ export function useGenerate() {
     }
   };
 
+  /**
+   * Handles completion of the flashcard generation process.
+   * @param proposals - List of flashcard proposals. Used for logging completion stats.
+   */
   const handleComplete = async (proposals: FlashcardProposalViewModel[]) => {
     if (!state.generationId) {
       setState((prev) => ({
@@ -84,27 +87,18 @@ export function useGenerate() {
     }
 
     try {
-      // Update each flashcard individually
-      const updatePromises = proposals.map(async (card) => {
-        const response = await fetch(`/api/flashcards/${card.id}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: card.status,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to update flashcard ${card.id}`);
-        }
+      // Log completion stats for debugging
+      console.debug("Completing generation", {
+        generationId: state.generationId,
+        totalProposals: proposals.length,
+        accepted: proposals.filter((p) => p.status === "accepted").length,
+        rejected: proposals.filter((p) => p.status === "rejected").length,
+        edited: proposals.filter((p) => p.isEdited).length,
       });
 
-      // Wait for all updates to complete
-      await Promise.all(updatePromises);
+      // Note: We don't need to manually update flashcard statuses here
+      // The backend (generation.service.ts) handles this when saving to Supabase
 
-      // Reset to input stage after successful updates
       setState({
         stage: STATES.INPUT,
         error: undefined,
