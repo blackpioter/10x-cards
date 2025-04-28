@@ -75,7 +75,7 @@ export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: 
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="flashcard-list">
       <div className="space-y-4">
         {/* Progress bar */}
         <div className="w-full bg-muted rounded-full h-2">
@@ -88,12 +88,14 @@ export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: 
         </div>
 
         {/* Progress stats */}
-        <div className="flex justify-between text-sm text-muted-foreground">
+        <div className="flex justify-between text-sm text-muted-foreground" data-testid="flashcard-stats">
           <span>
             {stats.accepted + stats.rejected} of {proposals.length} reviewed
           </span>
           <span>
-            {stats.edited} edited • {stats.accepted} accepted • {stats.rejected} rejected
+            <span data-testid="stat-edited">{stats.edited}</span> edited •
+            <span data-testid="stat-accepted">{stats.accepted}</span> accepted •
+            <span data-testid="stat-rejected">{stats.rejected}</span> rejected
           </span>
         </div>
 
@@ -104,17 +106,23 @@ export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: 
             size="sm"
             onClick={() => onBulkAction("accept-all")}
             disabled={proposals.every((p) => p.status === "accepted")}
+            data-testid="accept-all"
           >
             Accept All
           </Button>
-          <Button size="sm" onClick={() => onBulkAction("save-accepted")} disabled={!stats.accepted}>
+          <Button
+            size="sm"
+            onClick={() => onBulkAction("save-accepted")}
+            disabled={!stats.accepted}
+            data-testid="save-accepted"
+          >
             Save Accepted ({stats.accepted})
           </Button>
         </div>
       </div>
 
       {/* Flashcard grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-testid="flashcard-grid">
         {proposals.map((proposal) => (
           <FlashcardListItem
             key={proposal.id}

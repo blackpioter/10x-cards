@@ -60,7 +60,7 @@ export function FlashcardListItem({
   };
 
   return (
-    <Card className={`${getStatusColor()} transition-all h-full flex flex-col`}>
+    <Card className={`${getStatusColor()} transition-all h-full flex flex-col`} data-testid="flashcard-item">
       <CardContent className="flex-1 p-3 space-y-3">
         {isEditing ? (
           // Edit mode
@@ -99,11 +99,15 @@ export function FlashcardListItem({
           <>
             <div>
               <div className="text-sm font-medium mb-1">Front</div>
-              <div className="text-sm text-muted-foreground line-clamp-3">{proposal.front}</div>
+              <div className="text-sm text-muted-foreground line-clamp-3" data-testid="front-content">
+                {proposal.front}
+              </div>
             </div>
             <div>
               <div className="text-sm font-medium mb-1">Back</div>
-              <div className="text-sm text-muted-foreground line-clamp-3">{proposal.back}</div>
+              <div className="text-sm text-muted-foreground line-clamp-3" data-testid="back-content">
+                {proposal.back}
+              </div>
             </div>
           </>
         )}
@@ -113,10 +117,15 @@ export function FlashcardListItem({
         <div className="flex items-center gap-1.5">
           {isEditing ? (
             <>
-              <Button size="sm" onClick={handleSave} disabled={!editedFront.trim() || !editedBack.trim()}>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={!editedFront.trim() || !editedBack.trim()}
+                data-testid="save-edit"
+              >
                 Save
               </Button>
-              <Button size="sm" variant="ghost" onClick={onCancelEdit}>
+              <Button size="sm" variant="ghost" onClick={onCancelEdit} data-testid="cancel-edit">
                 Cancel
               </Button>
             </>
@@ -128,6 +137,7 @@ export function FlashcardListItem({
                 onClick={proposal.status === "accepted" ? onReset : onAccept}
                 className="h-7 px-2"
                 title={proposal.status === "accepted" ? "Withdraw acceptance" : "Accept"}
+                data-testid="accept-flashcard"
               >
                 <Check className="h-3.5 w-3.5" />
               </Button>
@@ -137,6 +147,7 @@ export function FlashcardListItem({
                 onClick={proposal.status === "rejected" ? onReset : onReject}
                 className="h-7 px-2"
                 title={proposal.status === "rejected" ? "Withdraw rejection" : "Reject"}
+                data-testid="reject-flashcard"
               >
                 <X className="h-3.5 w-3.5" />
               </Button>
@@ -154,6 +165,7 @@ export function FlashcardListItem({
               className="h-7 px-2"
               title="Edit"
               disabled={proposal.status === "accepted" || proposal.status === "rejected"}
+              data-testid="edit-flashcard"
             >
               <Edit2 className="h-3.5 w-3.5" />
             </Button>
@@ -166,6 +178,7 @@ export function FlashcardListItem({
               className="h-7 px-2"
               title="Reset to original content"
               disabled={proposal.status === "accepted" || proposal.status === "rejected"}
+              data-testid="restore-flashcard"
             >
               <RotateCcw className="h-3.5 w-3.5" />
             </Button>
