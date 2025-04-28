@@ -10,16 +10,23 @@ interface FlashcardListProps {
     proposalId: string;
     editedContent?: { front: string; back: string };
   }) => void;
-  onBulkAction: (action: "accept-all" | "save-accepted") => void;
+  onBulkAction: () => void;
   stats: {
     pending: number;
     accepted: number;
     rejected: number;
     edited: number;
   };
+  "data-testid"?: string;
 }
 
-export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: FlashcardListProps) {
+export function FlashcardList({
+  proposals,
+  onItemAction,
+  onBulkAction,
+  stats,
+  "data-testid": testId,
+}: FlashcardListProps) {
   const [editingId, setEditingId] = React.useState<string | null>(null);
 
   const handleEdit = React.useCallback(
@@ -75,7 +82,7 @@ export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: 
   );
 
   return (
-    <div className="space-y-6" data-testid="flashcard-list">
+    <div className="space-y-6" data-testid={testId}>
       <div className="space-y-4">
         {/* Progress bar */}
         <div className="w-full bg-muted rounded-full h-2">
@@ -93,8 +100,8 @@ export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: 
             {stats.accepted + stats.rejected} of {proposals.length} reviewed
           </span>
           <span>
-            <span data-testid="stat-edited">{stats.edited}</span> edited •
-            <span data-testid="stat-accepted">{stats.accepted}</span> accepted •
+            <span data-testid="stat-edited">{stats.edited}</span> edited •{" "}
+            <span data-testid="stat-accepted">{stats.accepted}</span> accepted •{" "}
             <span data-testid="stat-rejected">{stats.rejected}</span> rejected
           </span>
         </div>
@@ -104,19 +111,11 @@ export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: 
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onBulkAction("accept-all")}
+            onClick={onBulkAction}
             disabled={proposals.every((p) => p.status === "accepted")}
             data-testid="accept-all"
           >
             Accept All
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => onBulkAction("save-accepted")}
-            disabled={!stats.accepted}
-            data-testid="save-accepted"
-          >
-            Save Accepted ({stats.accepted})
           </Button>
         </div>
       </div>

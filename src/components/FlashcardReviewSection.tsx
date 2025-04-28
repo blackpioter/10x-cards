@@ -16,6 +16,9 @@ export function FlashcardReviewSection({
 }: FlashcardReviewSectionProps) {
   const [proposals, setProposals] = React.useState<FlashcardProposalViewModel[]>(flashcards);
   const [filter, setFilter] = React.useState<"all" | "accepted" | "rejected">("all");
+  const [pendingUpdates, setPendingUpdates] = React.useState<Map<string, "accepted" | "rejected" | "pending">>(
+    new Map()
+  );
 
   const stats = React.useMemo(() => {
     return proposals.reduce(
@@ -28,26 +31,55 @@ export function FlashcardReviewSection({
     );
   }, [proposals]);
 
-  const updateFlashcardStatus = React.useCallback(async (id: string, status: "accepted" | "rejected" | "pending") => {
+  const updateFlashcardStatus = React.useCallback(async (updates: Map<string, "accepted" | "rejected" | "pending">) => {
     try {
-      const response = await fetch(`/api/flashcards/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status,
-        }),
-      });
+      // Convert Map to array of updates
+      const updatePromises = Array.from(updates.entries()).map(([id, status]) =>
+        fetch(`/api/flashcards/${id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status }),
+        })
+      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to update flashcard ${id}`);
+      const results = await Promise.all(updatePromises);
+      const failedUpdates = results.filter((r) => !r.ok);
+
+      if (failedUpdates.length > 0) {
+        throw new Error(`Failed to update ${failedUpdates.length} flashcards`);
       }
     } catch (error) {
-      console.error("Error updating flashcard status:", error);
+      console.error("Error updating flashcard statuses:", error);
       throw error;
     }
   }, []);
+
+  // Automatically save changes when we have accumulated a few updates or after a delay
+  React.useEffect(() => {
+    if (pendingUpdates.size === 0) return;
+
+    const timeoutId = setTimeout(() => {
+      updateFlashcardStatus(pendingUpdates)
+        .then(() => {
+          setPendingUpdates(new Map());
+        })
+        .catch(console.error);
+    }, 2000); // Save changes after 2 seconds of inactivity
+
+    // If we have accumulated enough updates, save immediately
+    if (pendingUpdates.size >= 5) {
+      updateFlashcardStatus(pendingUpdates)
+        .then(() => {
+          setPendingUpdates(new Map());
+        })
+        .catch(console.error);
+      clearTimeout(timeoutId);
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [pendingUpdates, updateFlashcardStatus]);
 
   const handleItemAction = React.useCallback(
     async (action: {
@@ -56,13 +88,7 @@ export function FlashcardReviewSection({
       editedContent?: { front: string; back: string };
     }) => {
       try {
-        // First update the backend if it's a status change
-        if (action.type === "accept" || action.type === "reject" || action.type === "reset") {
-          const status = action.type === "accept" ? "accepted" : action.type === "reject" ? "rejected" : "pending";
-          await updateFlashcardStatus(action.proposalId, status);
-        }
-
-        // Then update the local state
+        // Update local state immediately
         setProposals((prev) =>
           prev.map((card) => {
             if (card.id !== action.proposalId) return card;
@@ -102,38 +128,64 @@ export function FlashcardReviewSection({
             }
           })
         );
+
+        // Add status change to pending updates
+        if (action.type === "accept" || action.type === "reject" || action.type === "reset") {
+          const status = action.type === "accept" ? "accepted" : action.type === "reject" ? "rejected" : "pending";
+          setPendingUpdates((prev) => new Map(prev).set(action.proposalId, status));
+        }
+
+        // Check if all cards have been reviewed
+        const updatedProposals = proposals.map((card) =>
+          card.id === action.proposalId
+            ? ({
+                ...card,
+                status: action.type === "accept" ? "accepted" : action.type === "reject" ? "rejected" : "pending",
+              } as FlashcardProposalViewModel)
+            : card
+        );
+
+        if (!updatedProposals.some((card) => card.status === "pending")) {
+          // Save any pending updates before completing
+          if (pendingUpdates.size > 0) {
+            await updateFlashcardStatus(pendingUpdates);
+            setPendingUpdates(new Map());
+          }
+          onComplete(updatedProposals);
+        }
       } catch (error) {
         console.error("Failed to update flashcard:", error);
-        // You might want to show an error notification here
       }
     },
-    [updateFlashcardStatus]
+    [proposals, pendingUpdates, updateFlashcardStatus, onComplete]
   );
 
-  const handleBulkAction = React.useCallback(
-    async (action: "accept-all" | "save-accepted") => {
-      if (action === "accept-all") {
-        try {
-          // Update all pending cards to accepted in parallel
-          const pendingCards = proposals.filter((card) => card.status === "pending");
-          await Promise.all(pendingCards.map((card) => updateFlashcardStatus(card.id, "accepted")));
+  const handleBulkAction = React.useCallback(async () => {
+    try {
+      const pendingCards = proposals.filter((card) => card.status === "pending");
 
-          setProposals((prev) =>
-            prev.map((card) => ({
-              ...card,
-              status: "accepted" as const,
-            }))
-          );
-        } catch (error) {
-          console.error("Failed to accept all flashcards:", error);
-          // You might want to show an error notification here
-        }
-      } else if (action === "save-accepted") {
-        onComplete(proposals);
-      }
-    },
-    [proposals, onComplete, updateFlashcardStatus]
-  );
+      // Update local state
+      setProposals((prev) =>
+        prev.map((card) => ({
+          ...card,
+          status: "accepted" as const,
+        }))
+      );
+
+      // Add all updates to pending updates
+      const updates = new Map(pendingCards.map((card) => [card.id, "accepted" as const]));
+      await updateFlashcardStatus(updates);
+
+      const updatedProposals = proposals.map((card) => ({
+        ...card,
+        status: "accepted" as const,
+      }));
+
+      onComplete(updatedProposals);
+    } catch (error) {
+      console.error("Failed to accept all flashcards:", error);
+    }
+  }, [proposals, updateFlashcardStatus, onComplete]);
 
   const filteredProposals = React.useMemo(() => {
     if (filter === "all") return proposals;
