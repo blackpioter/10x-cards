@@ -50,7 +50,7 @@ test.describe("Generate View", () => {
     // Verify flashcards were generated
     await generatePage.expectReviewSectionVisible();
     const flashcardCount = await page.getByTestId("flashcard-item").count();
-    expect(flashcardCount).toBeGreaterThan(0);
+    expect(flashcardCount).toBeGreaterThan(5); // Need at least 6 flashcards for the test
 
     // Verify flashcard content
     const firstFlashcard = page.getByTestId("flashcard-item").first();
@@ -62,15 +62,28 @@ test.describe("Generate View", () => {
     await expect(firstFlashcard.getByTestId("reject-flashcard")).toBeVisible();
     await expect(firstFlashcard.getByTestId("edit-flashcard")).toBeVisible();
 
-    // Review and accept some flashcards
+    // Review 5 flashcards - accept 3, reject 2
     await flashcardList.acceptFlashcard(0);
-    await flashcardList.acceptFlashcard(2);
     await flashcardList.rejectFlashcard(1);
+    await flashcardList.acceptFlashcard(2);
+    await flashcardList.rejectFlashcard(3);
+    await flashcardList.acceptFlashcard(4);
 
-    // Verify stats - only check what we can control
+    // Wait for auto-save
+    await page.waitForLoadState("networkidle");
+
+    // Verify stats after reviewing 5 cards
     const stats = await flashcardList.getStats();
-    expect(stats.accepted).toBe(2);
-    expect(stats.rejected).toBe(1);
+    expect(stats.accepted).toBe(3);
+    expect(stats.rejected).toBe(2);
+    expect(stats.total - stats.accepted - stats.rejected).toBe(flashcardCount - 5);
+
+    // Wait a bit to ensure the stats are stable
+    await page.waitForTimeout(1000);
+
+    // Verify stats haven't changed
+    const finalStats = await flashcardList.getStats();
+    expect(finalStats).toEqual(stats);
   });
 
   test("should show validation error for short text", async ({ page }) => {
