@@ -70,64 +70,25 @@ export function GenerateView() {
     }
 
     try {
-      // Group flashcards by their current status
-      const acceptedIds = proposals.filter((card) => card.status === "accepted").map((card) => card.id);
-      const rejectedIds = proposals.filter((card) => card.status === "rejected").map((card) => card.id);
-      const pendingIds = proposals.filter((card) => card.status === "pending").map((card) => card.id);
-
-      // Update accepted flashcards
-      if (acceptedIds.length > 0) {
-        const acceptResponse = await fetch("/api/flashcards/status", {
-          method: "POST",
+      // Update each flashcard individually
+      const updatePromises = proposals.map(async (card) => {
+        const response = await fetch(`/api/flashcards/${card.id}`, {
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            flashcard_ids: acceptedIds,
-            status: "accepted",
+            status: card.status,
           }),
         });
 
-        if (!acceptResponse.ok) {
-          throw new Error("Failed to update accepted flashcards");
+        if (!response.ok) {
+          throw new Error(`Failed to update flashcard ${card.id}`);
         }
-      }
+      });
 
-      // Update rejected flashcards
-      if (rejectedIds.length > 0) {
-        const rejectResponse = await fetch("/api/flashcards/status", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            flashcard_ids: rejectedIds,
-            status: "rejected",
-          }),
-        });
-
-        if (!rejectResponse.ok) {
-          throw new Error("Failed to update rejected flashcards");
-        }
-      }
-
-      // Update pending flashcards
-      if (pendingIds.length > 0) {
-        const pendingResponse = await fetch("/api/flashcards/status", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            flashcard_ids: pendingIds,
-            status: "pending",
-          }),
-        });
-
-        if (!pendingResponse.ok) {
-          throw new Error("Failed to update pending flashcards");
-        }
-      }
+      // Wait for all updates to complete
+      await Promise.all(updatePromises);
 
       // Reset to input stage after successful updates
       setState({ stage: "input" });

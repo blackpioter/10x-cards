@@ -28,69 +28,111 @@ export function FlashcardReviewSection({
     );
   }, [proposals]);
 
+  const updateFlashcardStatus = React.useCallback(async (id: string, status: "accepted" | "rejected" | "pending") => {
+    try {
+      const response = await fetch(`/api/flashcards/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update flashcard ${id}`);
+      }
+    } catch (error) {
+      console.error("Error updating flashcard status:", error);
+      throw error;
+    }
+  }, []);
+
   const handleItemAction = React.useCallback(
-    (action: {
+    async (action: {
       type: "accept" | "reject" | "edit" | "reset" | "restore";
       proposalId: string;
       editedContent?: { front: string; back: string };
     }) => {
-      setProposals((prev) =>
-        prev.map((card) => {
-          if (card.id !== action.proposalId) return card;
+      try {
+        // First update the backend if it's a status change
+        if (action.type === "accept" || action.type === "reject" || action.type === "reset") {
+          const status = action.type === "accept" ? "accepted" : action.type === "reject" ? "rejected" : "pending";
+          await updateFlashcardStatus(action.proposalId, status);
+        }
 
-          switch (action.type) {
-            case "accept":
-              return { ...card, status: "accepted" as const };
-            case "reject":
-              return { ...card, status: "rejected" as const };
-            case "edit":
-              if (!action.editedContent) return card;
-              return {
-                ...card,
-                front: action.editedContent.front,
-                back: action.editedContent.back,
-                isEdited: true,
-                originalContent: card.originalContent || {
-                  front: card.front,
-                  back: card.back,
-                },
-              };
-            case "reset":
-              return {
-                ...card,
-                status: "pending" as const,
-              };
-            case "restore":
-              return {
-                ...card,
-                front: card.originalContent?.front || card.front,
-                back: card.originalContent?.back || card.back,
-                isEdited: false,
-                originalContent: undefined,
-              };
-            default:
-              return card;
-          }
-        })
-      );
+        // Then update the local state
+        setProposals((prev) =>
+          prev.map((card) => {
+            if (card.id !== action.proposalId) return card;
+
+            switch (action.type) {
+              case "accept":
+                return { ...card, status: "accepted" as const };
+              case "reject":
+                return { ...card, status: "rejected" as const };
+              case "edit":
+                if (!action.editedContent) return card;
+                return {
+                  ...card,
+                  front: action.editedContent.front,
+                  back: action.editedContent.back,
+                  isEdited: true,
+                  originalContent: card.originalContent || {
+                    front: card.front,
+                    back: card.back,
+                  },
+                };
+              case "reset":
+                return {
+                  ...card,
+                  status: "pending" as const,
+                };
+              case "restore":
+                return {
+                  ...card,
+                  front: card.originalContent?.front || card.front,
+                  back: card.originalContent?.back || card.back,
+                  isEdited: false,
+                  originalContent: undefined,
+                };
+              default:
+                return card;
+            }
+          })
+        );
+      } catch (error) {
+        console.error("Failed to update flashcard:", error);
+        // You might want to show an error notification here
+      }
     },
-    []
+    [updateFlashcardStatus]
   );
 
   const handleBulkAction = React.useCallback(
-    (action: "accept-all" | "save-accepted") => {
+    async (action: "accept-all" | "save-accepted") => {
       if (action === "accept-all") {
-        setProposals((prev) =>
-          prev.map((card) => ({
-            ...card,
-            status: "accepted" as const,
-          }))
-        );
+        try {
+          // Update all pending cards to accepted in parallel
+          const pendingCards = proposals.filter((card) => card.status === "pending");
+          await Promise.all(pendingCards.map((card) => updateFlashcardStatus(card.id, "accepted")));
+
+          setProposals((prev) =>
+            prev.map((card) => ({
+              ...card,
+              status: "accepted" as const,
+            }))
+          );
+        } catch (error) {
+          console.error("Failed to accept all flashcards:", error);
+          // You might want to show an error notification here
+        }
       } else if (action === "save-accepted") {
         onComplete(proposals);
       }
     },
-    [proposals, onComplete]
+    [proposals, onComplete, updateFlashcardStatus]
   );
 
   const filteredProposals = React.useMemo(() => {
