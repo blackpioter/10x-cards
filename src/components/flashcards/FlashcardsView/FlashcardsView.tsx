@@ -1,14 +1,14 @@
 import { useState, useCallback } from "react";
-import { useFlashcards } from "./hooks/useFlashcards";
-import { ExistingFlashcardList } from "./ExistingFlashcardList";
-import { FlashcardFilters } from "./FlashcardFilters";
-import { PaginationControls } from "./PaginationControls";
+import { useFlashcards } from "./useFlashcards";
+import { ExistingFlashcardList } from "../../ExistingFlashcardList";
+import { FlashcardFilters } from "../../FlashcardFilters";
+import { PaginationControls } from "../../PaginationControls";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Plus } from "lucide-react";
-import { EditFlashcardModal } from "./EditFlashcardModal";
-import { CreateFlashcardModal } from "./CreateFlashcardModal";
+import { EditFlashcardModal } from "../../EditFlashcardModal";
+import { CreateFlashcardModal } from "../../CreateFlashcardModal";
 import { Button } from "@/components/ui/button";
-import type { FlashcardViewModel } from "../types";
+import type { FlashcardViewModel } from "@/types";
 
 interface FlashcardsViewState {
   modals: {

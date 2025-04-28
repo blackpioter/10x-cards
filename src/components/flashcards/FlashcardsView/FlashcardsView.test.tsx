@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { FlashcardsView } from "../FlashcardsView";
+import { FlashcardsView } from "./FlashcardsView";
+import { useFlashcards } from "./useFlashcards";
 import "@testing-library/jest-dom";
-import type { FlashcardViewModel, FlashcardStatus } from "../../types";
+import type { FlashcardViewModel, FlashcardStatus } from "@/types";
 
 // Interfejsy dla mocków komponentów
 interface ExistingFlashcardListProps {
@@ -50,7 +51,7 @@ const mockUpdateFlashcardWithError = vi.fn().mockImplementation(() => {
 });
 
 // Mock the custom hook
-vi.mock("../hooks/useFlashcards", () => ({
+vi.mock("./useFlashcards", () => ({
   useFlashcards: vi.fn(() => ({
     flashcards: [],
     pagination: { page: 1, page_size: 10, total: 0, total_pages: 0 },
@@ -67,7 +68,7 @@ vi.mock("../hooks/useFlashcards", () => ({
 }));
 
 // Mock the child components
-vi.mock("../ExistingFlashcardList", () => ({
+vi.mock("../../ExistingFlashcardList", () => ({
   ExistingFlashcardList: ({ flashcards, onEdit, onDelete, onStatusChange }: ExistingFlashcardListProps) => (
     <div data-testid="flashcard-list">
       {flashcards.map((card) => (
@@ -81,7 +82,7 @@ vi.mock("../ExistingFlashcardList", () => ({
   ),
 }));
 
-vi.mock("../FlashcardFilters", () => ({
+vi.mock("../../FlashcardFilters", () => ({
   FlashcardFilters: ({ statusFilter, onStatusFilterChange }: FlashcardFiltersProps) => (
     <select data-testid="status-filter" value={statusFilter} onChange={(e) => onStatusFilterChange(e.target.value)}>
       <option value="all">All</option>
@@ -92,7 +93,7 @@ vi.mock("../FlashcardFilters", () => ({
   ),
 }));
 
-vi.mock("../PaginationControls", () => ({
+vi.mock("../../PaginationControls", () => ({
   PaginationControls: ({ pagination, onPageChange }: PaginationControlsProps) => (
     <div data-testid="pagination">
       <span>
@@ -104,7 +105,7 @@ vi.mock("../PaginationControls", () => ({
   ),
 }));
 
-vi.mock("../EditFlashcardModal", () => ({
+vi.mock("../../EditFlashcardModal", () => ({
   EditFlashcardModal: ({ flashcard, isOpen, onSave, onCancel }: EditFlashcardModalProps) =>
     isOpen &&
     flashcard && (
@@ -126,7 +127,7 @@ vi.mock("../EditFlashcardModal", () => ({
     ),
 }));
 
-vi.mock("../CreateFlashcardModal", () => ({
+vi.mock("../../CreateFlashcardModal", () => ({
   CreateFlashcardModal: ({ isOpen, onClose }: CreateFlashcardModalProps) =>
     isOpen && (
       <div data-testid="create-modal">
@@ -142,8 +143,6 @@ vi.mock("lucide-react", () => ({
   Loader2: () => <div data-testid="loader-icon" />,
   Plus: () => <div data-testid="plus-icon" />,
 }));
-
-import { useFlashcards } from "../hooks/useFlashcards";
 
 describe("FlashcardsView", () => {
   const mockFlashcard: FlashcardViewModel = {

@@ -6,7 +6,7 @@ import type {
   FlashcardActionStatus,
   PaginationDto,
   FlashcardStatsViewModel,
-} from "../../types";
+} from "../../../types";
 
 interface UseFlashcardsOptions {
   initialPage?: number;
