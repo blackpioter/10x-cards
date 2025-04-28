@@ -14,23 +14,6 @@ CREATE TABLE generation_cache (
     CONSTRAINT generation_cache_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 
--- Add RLS policies
-ALTER TABLE generation_cache ENABLE ROW LEVEL SECURITY;
-
--- Allow read access to all authenticated users
-CREATE POLICY "Allow read access to all authenticated users"
-    ON generation_cache
-    FOR SELECT
-    TO authenticated
-    USING (true);
-
--- Allow insert access only for own records
-CREATE POLICY "Allow insert access for own records"
-    ON generation_cache
-    FOR INSERT
-    TO authenticated
-    WITH CHECK (auth.uid() = user_id);
-
 -- Add function to clean old cache entries
 CREATE OR REPLACE FUNCTION clean_old_generation_cache()
 RETURNS void
