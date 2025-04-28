@@ -7,6 +7,7 @@
 alter table generations enable row level security;
 alter table flashcards enable row level security;
 alter table generation_error_logs enable row level security;
+alter table generation_cache enable row level security;
 
 -- Create RLS policies for generations (first, since it's referenced by flashcards)
 create policy "Authenticated users can view their own generations"
@@ -122,3 +123,28 @@ create policy "Anonymous users cannot delete error logs"
     on generation_error_logs for delete
     to anon
     using (false);
+
+-- Create RLS policies for generation_cache
+create policy "Allow read access to all authenticated users"
+    on generation_cache
+    for select
+    to authenticated
+    using (true);
+
+create policy "Allow insert access for own records"
+    on generation_cache
+    for insert
+    to authenticated
+    with check (auth.uid() = user_id);
+
+create policy "Anonymous users cannot view generation cache"
+    on generation_cache
+    for select
+    to anon
+    using (false);
+
+create policy "Anonymous users cannot insert generation cache"
+    on generation_cache
+    for insert
+    to anon
+    with check (false);
