@@ -31,7 +31,14 @@ drop policy if exists "Anonymous users cannot insert error logs" on generation_e
 drop policy if exists "Authenticated users can delete their own error logs" on generation_error_logs;
 drop policy if exists "Anonymous users cannot delete error logs" on generation_error_logs;
 
+-- Drop all policies from generation_cache table
+drop policy if exists "Allow read access to all authenticated users" on generation_cache;
+drop policy if exists "Allow insert access for own records" on generation_cache;
+drop policy if exists "Anonymous users cannot view generation cache" on generation_cache;
+drop policy if exists "Anonymous users cannot insert generation cache" on generation_cache;
+
 -- Disable Row Level Security on all tables
 alter table generations disable row level security;
 alter table flashcards disable row level security;
 alter table generation_error_logs disable row level security;
+alter table generation_cache disable row level security;
