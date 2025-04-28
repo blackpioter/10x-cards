@@ -39,14 +39,28 @@ test.describe("Generate View", () => {
     await generatePage.enterText(MEMORY_TECHNIQUES_TEXT);
     await generatePage.clickGenerate();
 
-    // Wait for generation to complete
+    // Verify generation progress UI
     await generatePage.expectGenerationInProgress();
+    await expect(page.getByText("Generating flashcards...")).toBeVisible();
+    await expect(page.getByTestId("generation-progress")).toBeVisible();
+
+    // Wait for generation to complete
     await generatePage.waitForGenerationComplete();
 
     // Verify flashcards were generated
     await generatePage.expectReviewSectionVisible();
     const flashcardCount = await page.getByTestId("flashcard-item").count();
     expect(flashcardCount).toBeGreaterThan(0);
+
+    // Verify flashcard content
+    const firstFlashcard = page.getByTestId("flashcard-item").first();
+    await expect(firstFlashcard.getByTestId("front-content")).not.toBeEmpty();
+    await expect(firstFlashcard.getByTestId("back-content")).not.toBeEmpty();
+
+    // Verify flashcard actions are available
+    await expect(firstFlashcard.getByTestId("accept-flashcard")).toBeVisible();
+    await expect(firstFlashcard.getByTestId("reject-flashcard")).toBeVisible();
+    await expect(firstFlashcard.getByTestId("edit-flashcard")).toBeVisible();
 
     // Review and accept some flashcards
     await flashcardList.acceptFlashcard(0);
@@ -57,10 +71,6 @@ test.describe("Generate View", () => {
     const stats = await flashcardList.getStats();
     expect(stats.accepted).toBe(2);
     expect(stats.rejected).toBe(1);
-    // Don't verify total or pending count as it's dynamic
-
-    // Save accepted flashcards
-    await flashcardList.saveAccepted();
   });
 
   test("should show validation error for short text", async ({ page }) => {

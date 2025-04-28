@@ -87,6 +87,29 @@ export class GeneratePage {
     return match ? parseInt(match[1]) : 0;
   }
 
+  async acceptAllFlashcards() {
+    const acceptAllButton = this.flashcardReviewSection.getByTestId("accept-all");
+    await acceptAllButton.click();
+  }
+
+  async getFlashcardStats() {
+    const stats = this.flashcardReviewSection.getByTestId("flashcard-stats");
+    const editedCount = await stats.getByTestId("stat-edited").textContent();
+    const acceptedCount = await stats.getByTestId("stat-accepted").textContent();
+    const rejectedCount = await stats.getByTestId("stat-rejected").textContent();
+
+    return {
+      edited: parseInt(editedCount || "0"),
+      accepted: parseInt(acceptedCount || "0"),
+      rejected: parseInt(rejectedCount || "0"),
+    };
+  }
+
+  async waitForReviewComplete() {
+    // Wait for redirection or state change that indicates review is complete
+    await this.page.waitForURL("/flashcards", { timeout: 10000 });
+  }
+
   // Error handling
   async getErrorMessage() {
     if (await this.errorNotification.isVisible()) {
