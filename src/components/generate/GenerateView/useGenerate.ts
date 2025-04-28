@@ -1,5 +1,16 @@
 import { useState } from "react";
-import type { GenerateViewState, FlashcardProposalDto, FlashcardProposalViewModel } from "../../../types";
+import type {
+  GenerateViewState,
+  FlashcardProposalDto,
+  FlashcardProposalViewModel,
+  FlashcardProposalListViewModel,
+} from "../../../types";
+
+const STATES = {
+  INPUT: "input",
+  GENERATING: "generating",
+  REVIEW: "review",
+} as const;
 
 interface GenerationResponse {
   generation_id: string;
@@ -8,50 +19,57 @@ interface GenerationResponse {
 
 export function useGenerate() {
   const [state, setState] = useState<GenerateViewState>({
-    stage: "input",
+    stage: STATES.INPUT,
+    error: undefined,
+    proposals: undefined,
   });
 
-  const handleGenerate = async (text: string) => {
+  const handleGenerate = async (sourceText: string) => {
     try {
-      setState((prev) => ({ ...prev, stage: "generating" }));
+      setState((prev) => ({ ...prev, stage: STATES.GENERATING, error: undefined }));
+
       const response = await fetch("/api/generations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ source_text: text }),
+        body: JSON.stringify({ source_text: sourceText }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to generate flashcards");
       }
 
-      const result = (await response.json()) as GenerationResponse;
+      const data: GenerationResponse = await response.json();
+
+      const proposalViewModels: FlashcardProposalViewModel[] = data.flashcard_proposals.map((proposal) => ({
+        ...proposal,
+        status: "pending",
+        isEdited: false,
+        isSelected: true,
+      }));
+
+      const proposalList: FlashcardProposalListViewModel = {
+        proposals: proposalViewModels,
+        stats: {
+          total: proposalViewModels.length,
+          accepted: 0,
+          rejected: 0,
+          edited: 0,
+        },
+      };
+
       setState((prev) => ({
         ...prev,
-        stage: "review",
-        generationId: result.generation_id,
-        proposals: {
-          proposals: result.flashcard_proposals.map((proposal) => ({
-            id: proposal.id,
-            front: proposal.front,
-            back: proposal.back,
-            status: "pending" as const,
-            isEdited: false,
-          })),
-          stats: {
-            total: result.flashcard_proposals.length,
-            accepted: 0,
-            rejected: 0,
-            edited: 0,
-          },
-        },
+        stage: STATES.REVIEW,
+        proposals: proposalList,
+        generationId: data.generation_id,
       }));
     } catch (error) {
       setState((prev) => ({
         ...prev,
-        stage: "input",
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        stage: STATES.INPUT,
+        error: error instanceof Error ? error.message : "An error occurred",
       }));
     }
   };
@@ -87,7 +105,11 @@ export function useGenerate() {
       await Promise.all(updatePromises);
 
       // Reset to input stage after successful updates
-      setState({ stage: "input" });
+      setState({
+        stage: STATES.INPUT,
+        error: undefined,
+        proposals: undefined,
+      });
     } catch (error) {
       setState((prev) => ({
         ...prev,
