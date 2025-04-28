@@ -279,7 +279,7 @@ describe("FlashcardsView", () => {
     it("should handle error during updateFlashcard", async () => {
       // Wywołujemy błąd bezpośrednio w kodzie testu
       const error = new Error("Update failed");
-      const consoleErrorSpy = vi.spyOn(console, "error");
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => void 0);
 
       // Musimy manualnie wywołać console.error w teście, używając tej samej struktury
       const updateFlashcardMock = vi.fn().mockImplementation(() => {
