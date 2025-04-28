@@ -61,7 +61,7 @@ vi.mock("../../GenerationProgress", () => ({
   GenerationProgress: ({ status }: GenerationProgressProps) => <div data-testid="progress">{status}</div>,
 }));
 
-vi.mock("../../FlashcardReviewSection", () => ({
+vi.mock("./FlashcardReviewSection", () => ({
   FlashcardReviewSection: ({ flashcards, onComplete }: FlashcardReviewSectionProps) => (
     <div data-testid="review-section">
       <span>{flashcards.length} flashcards</span>

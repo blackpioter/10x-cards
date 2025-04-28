@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { FlashcardProposalViewModel } from "../../types";
+import type { FlashcardProposalViewModel } from "../../../../types";
 import { useFlashcardStats } from "./useFlashcardStats";
 
 export function useFlashcardReview(

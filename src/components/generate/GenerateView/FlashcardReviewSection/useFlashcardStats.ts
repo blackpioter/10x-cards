@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { FlashcardProposalViewModel } from "../../types";
+import type { FlashcardProposalViewModel } from "../../../../types";
 
 export interface FlashcardStats {
   pending: number;

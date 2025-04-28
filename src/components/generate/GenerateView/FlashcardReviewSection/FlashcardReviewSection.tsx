@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import type { FlashcardProposalViewModel } from "../../types";
-import { FlashcardList } from "../FlashcardList";
+import type { FlashcardProposalViewModel } from "../../../../types";
+import { FlashcardList } from "../../../FlashcardList";
 import { useFlashcardReview } from "./useFlashcardReview";
 
 interface FlashcardReviewSectionProps {
