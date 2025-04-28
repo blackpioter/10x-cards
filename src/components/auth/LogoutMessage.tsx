@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ErrorNotification } from "../ErrorNotification";
+import { ErrorNotification } from "../common/ErrorNotification";
 
 interface LogoutMessageState {
   isLoading: boolean;

@@ -2,17 +2,7 @@ import * as React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ErrorState } from "../types";
-
-interface ErrorNotificationProps {
-  error: ErrorState;
-  onClose: () => void;
-  autoHideDuration?: number | false;
-  "data-testid"?: string;
-  className?: string;
-  enableAnimation?: boolean;
-  showProgressBar?: boolean;
-}
+import type { ErrorNotificationProps } from "./types";
 
 export function ErrorNotification({
   error,

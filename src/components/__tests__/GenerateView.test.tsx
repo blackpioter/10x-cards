@@ -73,7 +73,7 @@ vi.mock("../FlashcardReviewSection", () => ({
   },
 }));
 
-vi.mock("../ErrorNotification", () => ({
+vi.mock("../common/ErrorNotification", () => ({
   ErrorNotification: ({ error, onClose }: ErrorNotificationProps) => (
     <div data-testid="error-notification">
       {error.message}
@@ -238,9 +238,8 @@ describe("GenerateView", () => {
         expect(screen.getByTestId("review-section")).toBeInTheDocument();
       });
 
-      // Mockujemy API dla zapisu statusów, ale dodajemy błąd
+      // Mockujemy API dla zapisu statusów - tylko jedno wywołanie, bo pierwsze się nie powiedzie
       (global.fetch as MockFetch).mockReset();
-      // Poniższy fetch będzie wywoływany przez handleComplete i powinien zwrócić błąd
       (global.fetch as MockFetch).mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -258,13 +257,15 @@ describe("GenerateView", () => {
         mockCompleteCallback(updatedFlashcards);
       }
 
-      // Sprawdzamy czy API zostało wywołane
+      // Sprawdzamy czy API zostało wywołane odpowiednią ilość razy
+      // 1 dla początkowej generacji + 1 dla pierwszej (nieudanej) aktualizacji statusu
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(1); // 1 dla generacji
+        expect(global.fetch).toHaveBeenCalledTimes(2);
       });
 
       // Sprawdzamy czy pojawił się komunikat o błędzie
       expect(screen.getByTestId("error-notification")).toBeInTheDocument();
+      expect(screen.getByText("Failed to update flashcard 1")).toBeInTheDocument();
 
       // Zamykamy komunikat o błędzie
       fireEvent.click(screen.getByTestId("close-error"));

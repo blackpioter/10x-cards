@@ -3,7 +3,7 @@ import type { GenerateViewState, FlashcardProposalDto, FlashcardProposalViewMode
 import { TextInputSection } from "./TextInputSection";
 import { GenerationProgress } from "./GenerationProgress";
 import { FlashcardReviewSection } from "./FlashcardReviewSection";
-import { ErrorNotification } from "./ErrorNotification";
+import { ErrorNotification } from "./common/ErrorNotification";
 
 interface GenerationResponse {
   generation_id: string;

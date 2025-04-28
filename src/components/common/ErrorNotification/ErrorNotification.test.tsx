@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ErrorNotification } from "../ErrorNotification";
-import type { ErrorState } from "../../types";
+import { ErrorNotification } from "./ErrorNotification";
+import type { ErrorState } from "@/types";
 
 describe("ErrorNotification", () => {
   // Test configuration

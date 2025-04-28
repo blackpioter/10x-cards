@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ErrorNotification } from "../ErrorNotification";
+import { ErrorNotification } from "../common/ErrorNotification";
 import type { ErrorState } from "../../types";
 
 interface LoginFormState {
