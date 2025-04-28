@@ -1,7 +1,8 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { GenerateFlashcardsCommand } from "../../types";
-import { generationService } from "../../lib/generation.service";
+import { createGenerationService } from "../../lib/generation.service";
+import { createSupabaseServerInstance } from "../../db/supabase.client";
 
 // Prevent prerendering of API route
 export const prerender = false;
@@ -14,7 +15,7 @@ const generateFlashcardsSchema = z.object({
     .max(10000, "Source text cannot exceed 10000 characters"),
 });
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request, locals, cookies }) => {
   try {
     // Check authentication
     const authResult = await locals.auth();
@@ -24,6 +25,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
         headers: { "Content-Type": "application/json" },
       });
     }
+
+    // Create authenticated Supabase client
+    const supabase = createSupabaseServerInstance({ headers: request.headers, cookies });
 
     // Parse and validate request body
     const body = await request.json();
@@ -48,7 +52,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       source_text: validationResult.data.source_text,
     };
 
-    // Call the generation service
+    // Create and call the generation service with authenticated client
+    const generationService = createGenerationService(supabase);
     const result = await generationService.generateFlashcards(command, authResult.user.id);
 
     return new Response(JSON.stringify(result), {

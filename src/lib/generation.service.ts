@@ -1,20 +1,23 @@
 import type { GenerateFlashcardsCommand, GenerationCreateResponseDto, FlashcardProposalDto } from "../types";
 import { createHash } from "crypto";
-import { supabaseClient } from "../db/supabase.client";
+import type { SupabaseClient } from "../db/supabase.client";
 import { OpenRouterService } from "./openrouter.service";
 import { LoggingService } from "./logging.service";
+import { createGenerationCacheService } from "./generation-cache.service";
 
 export class GenerationService {
   private openRouterService: OpenRouterService;
   private readonly _logger: LoggingService;
+  private readonly _supabase: SupabaseClient;
 
-  constructor() {
+  constructor(supabase: SupabaseClient) {
     const apiKey = import.meta.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("OPENROUTER_API_KEY environment variable is required");
     }
 
     this._logger = new LoggingService({ serviceName: "GenerationService" });
+    this._supabase = supabase;
 
     // Initialize OpenRouter service with configuration
     this.openRouterService = new OpenRouterService({
@@ -36,12 +39,14 @@ export class GenerationService {
     sourceTextHash,
     generatedCount,
     generationDuration,
+    fromCache,
   }: {
     userId: string;
     sourceText: string;
     sourceTextHash: string;
     generatedCount: number;
-    generationDuration: number; // duration in milliseconds
+    generationDuration: number;
+    fromCache: boolean;
   }) {
     this._logger.debug("Saving generation metadata", {
       userId,
@@ -49,18 +54,20 @@ export class GenerationService {
       sourceTextHash,
       generatedCount,
       generationDuration,
+      fromCache,
     });
 
-    const { data: generation, error: generationError } = await supabaseClient
+    const { data: generation, error: generationError } = await this._supabase
       .from("generations")
       .insert({
         user_id: userId,
         source_text_length: sourceText.length,
         source_text_hash: sourceTextHash,
         generated_count: generatedCount,
-        generation_duration: `${generationDuration} milliseconds`, // PostgreSQL interval format
+        generation_duration: `${generationDuration} milliseconds`,
         accepted_unedited_count: 0,
         accepted_edited_count: 0,
+        from_cache: fromCache,
       })
       .select()
       .single();
@@ -89,7 +96,7 @@ export class GenerationService {
       proposalCount: proposals.length,
     });
 
-    const { data: flashcards, error: flashcardsError } = await supabaseClient
+    const { data: flashcards, error: flashcardsError } = await this._supabase
       .from("flashcards")
       .insert(
         proposals.map((proposal) => ({
@@ -117,7 +124,7 @@ export class GenerationService {
     return flashcards;
   }
 
-  private async generateFlashcardsWithAI(sourceText: string): Promise<FlashcardProposalDto[]> {
+  private async generateFlashcardsWithAI(sourceText: string, userId: string): Promise<FlashcardProposalDto[]> {
     this._logger.info("Starting AI flashcard generation", { textLength: sourceText.length });
 
     // Initialize OpenRouter if not already done
@@ -153,11 +160,11 @@ export class GenerationService {
       max_tokens: 2000,
     });
 
-    // Call the API and get response
-    await this.openRouterService.callAPI();
-    const result = await this.openRouterService.getResponse();
-
     try {
+      // Call the API and get response
+      await this.openRouterService.callAPI();
+      const result = await this.openRouterService.getResponse();
+
       // Get the content from the first choice's message
       const content = result.choices[0]?.message?.content;
       if (!content) {
@@ -172,10 +179,30 @@ export class GenerationService {
         .replace(/\s*```$/g, "") // Remove closing ```
         .trim(); // Remove any extra whitespace
 
-      const flashcards = JSON.parse(cleanContent);
+      let flashcards;
+      try {
+        flashcards = JSON.parse(cleanContent);
+      } catch (parseError: unknown) {
+        this._logger.error("Failed to parse JSON response", {
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+          content: cleanContent,
+        });
+        throw new Error(
+          `Failed to parse JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+        );
+      }
+
       if (!Array.isArray(flashcards)) {
         this._logger.error("Invalid response format", { content: cleanContent });
         throw new Error("Invalid response format: expected array of flashcards");
+      }
+
+      // Validate each flashcard has required properties
+      for (const card of flashcards) {
+        if (!card.front || !card.back || typeof card.front !== "string" || typeof card.back !== "string") {
+          this._logger.error("Invalid flashcard format", { card });
+          throw new Error("Invalid flashcard format: missing or invalid front/back properties");
+        }
       }
 
       // Transform and validate the response
@@ -186,11 +213,18 @@ export class GenerationService {
         source: "ai-full" as const,
       }));
 
+      // Cache the generated flashcards
+      const cacheService = createGenerationCacheService(this._supabase);
+      await cacheService.cacheGeneration(sourceText, transformedFlashcards, userId);
+
       this._logger.info("Successfully generated flashcards", { count: transformedFlashcards.length });
       return transformedFlashcards;
     } catch (error) {
-      this._logger.error("Failed to parse AI response", { error, raw: result.choices[0]?.message?.content });
-      throw new Error("Failed to generate valid flashcards from AI response");
+      this._logger.error("Failed to generate flashcards", {
+        error: error instanceof Error ? error.message : String(error),
+        raw: error instanceof Error ? error.stack : undefined,
+      });
+      throw new Error(`Failed to generate flashcards: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -203,10 +237,25 @@ export class GenerationService {
     try {
       // Calculate source text hash for logging
       const sourceTextHash = createHash("sha256").update(command.source_text).digest("hex");
-
-      // Generate flashcard proposals using AI and measure duration
       const startTime = performance.now();
-      const proposals = await this.generateFlashcardsWithAI(command.source_text);
+
+      // Check cache first
+      const cacheService = createGenerationCacheService(this._supabase);
+      const cachedResult = await cacheService.getCachedGeneration(command.source_text);
+      let proposals: FlashcardProposalDto[];
+      let fromCache = false;
+
+      if (cachedResult) {
+        this._logger.info("Using cached flashcards", {
+          fromExactMatch: cachedResult.fromExactMatch,
+        });
+        proposals = cachedResult.flashcards;
+        fromCache = true;
+      } else {
+        // Generate new flashcards if not in cache
+        proposals = await this.generateFlashcardsWithAI(command.source_text, userId);
+      }
+
       const endTime = performance.now();
       const generationDuration = Math.round(endTime - startTime);
 
@@ -217,6 +266,7 @@ export class GenerationService {
         sourceTextHash,
         generatedCount: proposals.length,
         generationDuration,
+        fromCache,
       });
 
       // Store flashcard proposals and get their IDs
@@ -238,6 +288,7 @@ export class GenerationService {
         generationId: generation.id,
         flashcardCount: proposalsWithIds.length,
         duration: generationDuration,
+        fromCache,
       });
 
       return {
@@ -252,5 +303,5 @@ export class GenerationService {
   }
 }
 
-// Export singleton instance
-export const generationService = new GenerationService();
+// Export factory function instead of singleton
+export const createGenerationService = (supabase: SupabaseClient) => new GenerationService(supabase);

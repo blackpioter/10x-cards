@@ -149,6 +149,41 @@ export interface Database {
         };
         Relationships: [];
       };
+      generation_cache: {
+        Row: {
+          id: string;
+          text_hash: string;
+          source_text: string;
+          flashcards: Json;
+          created_at: string;
+          user_id: string;
+        };
+        Insert: {
+          id?: string;
+          text_hash: string;
+          source_text: string;
+          flashcards: Json;
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          id?: string;
+          text_hash?: string;
+          source_text?: string;
+          flashcards?: Json;
+          created_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "generation_cache_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: Record<never, never>;
