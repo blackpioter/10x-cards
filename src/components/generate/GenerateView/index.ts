@@ -1,0 +1,1 @@
+export { GenerateView } from "./GenerateView";

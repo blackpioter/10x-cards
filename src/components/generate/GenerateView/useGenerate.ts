@@ -1,16 +1,12 @@
 import { useState } from "react";
-import type { GenerateViewState, FlashcardProposalDto, FlashcardProposalViewModel } from "../types";
-import { TextInputSection } from "./TextInputSection";
-import { GenerationProgress } from "./GenerationProgress";
-import { FlashcardReviewSection } from "./FlashcardReviewSection";
-import { ErrorNotification } from "./common/ErrorNotification";
+import type { GenerateViewState, FlashcardProposalDto, FlashcardProposalViewModel } from "../../../types";
 
 interface GenerationResponse {
   generation_id: string;
   flashcard_proposals: FlashcardProposalDto[];
 }
 
-export function GenerateView() {
+export function useGenerate() {
   const [state, setState] = useState<GenerateViewState>({
     stage: "input",
   });
@@ -100,32 +96,14 @@ export function GenerateView() {
     }
   };
 
-  return (
-    <div className="space-y-6" data-testid="generate-view">
-      {state.error && (
-        <ErrorNotification
-          error={{
-            type: "api",
-            message: state.error,
-          }}
-          onClose={() => setState((prev) => ({ ...prev, error: undefined }))}
-          data-testid="error-notification"
-        />
-      )}
+  const clearError = () => {
+    setState((prev) => ({ ...prev, error: undefined }));
+  };
 
-      {state.stage === "input" && (
-        <TextInputSection onGenerate={handleGenerate} isGenerating={false} data-testid="text-input-section" />
-      )}
-
-      {state.stage === "generating" && <GenerationProgress status="generating" data-testid="generation-progress" />}
-
-      {state.stage === "review" && state.proposals && (
-        <FlashcardReviewSection
-          flashcards={state.proposals.proposals}
-          onComplete={handleComplete}
-          data-testid="flashcard-review-section"
-        />
-      )}
-    </div>
-  );
+  return {
+    state,
+    handleGenerate,
+    handleComplete,
+    clearError,
+  };
 }
