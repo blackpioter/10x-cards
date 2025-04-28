@@ -1,7 +1,9 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
 import type { FlashcardUpdateDto } from "../../../types";
-import { FlashcardsError, flashcardService } from "../../../lib/flashcard.service";
+import { FlashcardsError } from "../../../lib/flashcard.service";
+import { createSupabaseServerInstance } from "../../../db/supabase.client";
+import { createFlashcardService } from "../../../lib/flashcard.service";
 
 // Validation schema for update
 const flashcardUpdateSchema = z.object({
@@ -22,7 +24,7 @@ const flashcardUpdateSchema = z.object({
 
 export const prerender = false;
 
-export const PATCH: APIRoute = async ({ request, params, locals }) => {
+export const PATCH: APIRoute = async ({ request, params, locals, cookies }) => {
   try {
     // Check authentication
     const authResult = await locals.auth();
@@ -66,6 +68,15 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
 
     const updateData = validationResult.data as FlashcardUpdateDto;
 
+    // Create Supabase client with auth context
+    const supabase = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
+
+    // Create flashcard service with authenticated client
+    const flashcardService = createFlashcardService(supabase);
+
     // Update flashcard using the service
     const flashcard = await flashcardService.updateFlashcard(id, updateData, authResult.user.id);
 
@@ -105,7 +116,7 @@ export const PATCH: APIRoute = async ({ request, params, locals }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ params, locals }) => {
+export const DELETE: APIRoute = async ({ params, locals, cookies, request }) => {
   try {
     // Check authentication
     const authResult = await locals.auth();
@@ -129,6 +140,15 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
         }
       );
     }
+
+    // Create Supabase client with auth context
+    const supabase = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
+
+    // Create flashcard service with authenticated client
+    const flashcardService = createFlashcardService(supabase);
 
     // Delete flashcard using the service
     await flashcardService.deleteFlashcard(id, authResult.user.id);

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
-import { FlashcardsError, flashcardService } from "../../../lib/flashcard.service";
+import { FlashcardsError } from "../../../lib/flashcard.service";
+import { createSupabaseServerInstance } from "../../../db/supabase.client";
+import { createFlashcardService } from "../../../lib/flashcard.service";
 
 // Validation schema
 const updateStatusSchema = z.object({
@@ -12,7 +14,7 @@ const updateStatusSchema = z.object({
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request, locals, cookies }) => {
   try {
     // Check authentication
     const authResult = await locals.auth();
@@ -41,6 +43,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const { status, flashcard_ids } = validationResult.data;
+
+    // Create Supabase client with auth context
+    const supabase = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
+
+    // Create flashcard service with authenticated client
+    const flashcardService = createFlashcardService(supabase);
 
     // Update flashcards status using the service
     const flashcards = await flashcardService.updateFlashcardsStatus(

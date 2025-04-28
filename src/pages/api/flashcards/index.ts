@@ -1,7 +1,9 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
 import type { FlashcardCreateCommand } from "../../../types";
-import { FlashcardsError, flashcardService } from "../../../lib/flashcard.service";
+import { FlashcardsError } from "../../../lib/flashcard.service";
+import { createSupabaseServerInstance } from "../../../db/supabase.client";
+import { createFlashcardService } from "../../../lib/flashcard.service";
 
 // Validation schemas
 const flashcardCreateSchema = z.object({
@@ -27,7 +29,7 @@ const flashcardFilterSchema = z.object({
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request, locals, cookies }) => {
   try {
     // Check authentication
     const authResult = await locals.auth();
@@ -56,6 +58,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const command = validationResult.data as FlashcardCreateCommand;
+
+    // Create Supabase client with auth context
+    const supabase = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
+
+    // Create flashcard service with authenticated client
+    const flashcardService = createFlashcardService(supabase);
 
     // Create flashcards using the service
     const flashcards = await flashcardService.createFlashcards(command, authResult.user.id);
@@ -96,7 +107,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 };
 
-export const GET: APIRoute = async ({ request, locals }) => {
+export const GET: APIRoute = async ({ request, locals, cookies }) => {
   try {
     // Check authentication
     const authResult = await locals.auth();
@@ -128,6 +139,15 @@ export const GET: APIRoute = async ({ request, locals }) => {
     }
 
     const { status, sort_by, page, page_size } = validationResult.data;
+
+    // Create Supabase client with auth context
+    const supabase = createSupabaseServerInstance({
+      cookies,
+      headers: request.headers,
+    });
+
+    // Create flashcard service with authenticated client
+    const flashcardService = createFlashcardService(supabase);
 
     // Get flashcards using the service
     const result = await flashcardService.getFlashcards({

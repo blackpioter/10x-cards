@@ -1,6 +1,12 @@
-import { supabaseClient } from "../db/supabase.client";
-import type { FlashcardCreateCommand, FlashcardDto, FlashcardListResponseDto, FlashcardReviewDto } from "../types";
 import { LoggingService } from "./logging.service";
+import type { SupabaseClient } from "../db/supabase.client";
+import type {
+  FlashcardCreateCommand,
+  FlashcardDto,
+  FlashcardListResponseDto,
+  FlashcardReviewDto,
+  FlashcardActionStatus,
+} from "../types";
 
 export class FlashcardsError extends Error {
   constructor(
@@ -14,11 +20,9 @@ export class FlashcardsError extends Error {
 
 export class FlashcardService {
   private readonly _logger: LoggingService;
-  private readonly _supabaseClient;
 
-  constructor() {
+  constructor(private readonly _supabaseClient: SupabaseClient) {
     this._logger = new LoggingService({ serviceName: "FlashcardService" });
-    this._supabaseClient = supabaseClient;
   }
 
   /**
@@ -30,7 +34,7 @@ export class FlashcardService {
    * @throws {FlashcardsError} with code 500 for other errors
    */
   async updateFlashcardsStatus(
-    updates: { ids: string[]; status: "accepted" | "rejected" | "pending" }[],
+    updates: { ids: string[]; status: FlashcardActionStatus }[],
     user_id: string
   ): Promise<FlashcardDto[]> {
     this._logger.info("Updating flashcards status", {
@@ -76,7 +80,10 @@ export class FlashcardService {
         throw new FlashcardsError(`Error updating flashcards to ${status}: ${updateError.message}`, 500);
       }
 
-      return updatedFlashcards;
+      return updatedFlashcards?.map((card) => ({
+        ...card,
+        status: card.status as FlashcardActionStatus,
+      }));
     });
 
     try {
@@ -149,7 +156,7 @@ export class FlashcardService {
         command.flashcards.map((f) => ({
           ...f,
           user_id: user_id,
-          status: "pending",
+          status: "pending" as const,
         }))
       )
       .select();
@@ -169,7 +176,10 @@ export class FlashcardService {
       ids: flashcards.map((f) => f.id),
     });
 
-    return flashcards;
+    return flashcards.map((card) => ({
+      ...card,
+      status: card.status as FlashcardActionStatus,
+    }));
   }
 
   /**
@@ -185,7 +195,7 @@ export class FlashcardService {
     page_size,
     user_id,
   }: {
-    status?: "pending" | "accepted" | "rejected";
+    status?: FlashcardActionStatus;
     sort_by?: "created_at" | "review_count";
     page: number;
     page_size: number;
@@ -231,7 +241,10 @@ export class FlashcardService {
     });
 
     return {
-      data: flashcards,
+      data: flashcards.map((card) => ({
+        ...card,
+        status: card.status as FlashcardActionStatus,
+      })),
       pagination: {
         page,
         page_size,
@@ -285,7 +298,10 @@ export class FlashcardService {
 
     this._logger.info("Successfully updated flashcard", { id: updatedFlashcard.id });
 
-    return updatedFlashcard;
+    return {
+      ...updatedFlashcard,
+      status: updatedFlashcard.status as FlashcardActionStatus,
+    };
   }
 
   /**
@@ -334,7 +350,7 @@ export class FlashcardService {
    */
   async getFlashcardsForReview(
     user_id: string,
-    status: "pending" | "accepted" | "rejected" = "pending"
+    status: FlashcardActionStatus = "pending"
   ): Promise<FlashcardReviewDto[]> {
     this._logger.info("Getting flashcards for review", { status });
 
@@ -359,5 +375,5 @@ export class FlashcardService {
   }
 }
 
-// Export singleton instance
-export const flashcardService = new FlashcardService();
+// Export factory function instead of singleton
+export const createFlashcardService = (supabase: SupabaseClient) => new FlashcardService(supabase);
