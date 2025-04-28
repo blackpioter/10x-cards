@@ -46,10 +46,6 @@ export class FlashcardListPage {
     await this.container.getByTestId("accept-all").click();
   }
 
-  async saveAccepted() {
-    await this.container.getByTestId("save-accepted").click();
-  }
-
   // Stats
   async getStats() {
     const filterButtons = this.reviewSection.getByTestId("filter-buttons");
