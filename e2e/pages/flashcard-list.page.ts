@@ -27,10 +27,10 @@ export class FlashcardListPage {
     await flashcard.getByTestId("edit-flashcard").click();
 
     if (front !== undefined) {
-      await flashcard.getByTestId("front-input").fill(front);
+      await flashcard.getByLabel("Front").fill(front);
     }
     if (back !== undefined) {
-      await flashcard.getByTestId("back-input").fill(back);
+      await flashcard.getByLabel("Back").fill(back);
     }
 
     await flashcard.getByTestId("save-edit").click();
