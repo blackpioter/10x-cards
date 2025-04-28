@@ -34,19 +34,51 @@ teardown("delete test data from database", async () => {
     console.log("Successfully authenticated. Cleaning up test data...");
 
     // Delete flashcards for test user and return the count of deleted records
-    const { error: deleteError, data: deletedRecords } = await supabase
+    const { error: deleteFlashcardsError, data: deletedFlashcards } = await supabase
       .from("flashcards")
       .delete()
       .eq("user_id", testUserId)
       .select();
 
-    if (deleteError) {
-      console.error("Error deleting test flashcards:", deleteError.message);
-      throw deleteError;
+    if (deleteFlashcardsError) {
+      console.error("Error deleting test flashcards:", deleteFlashcardsError.message);
+      throw deleteFlashcardsError;
     }
 
-    const count = deletedRecords?.length ?? 0;
-    console.log(`Successfully cleaned up test data. Deleted ${count} flashcards.`);
+    const flashcardsCount = deletedFlashcards?.length ?? 0;
+    console.log(`Successfully cleaned up flashcards. Deleted ${flashcardsCount} records.`);
+
+    // Delete generations for test user and return the count of deleted records
+    const { error: deleteGenerationsError, data: deletedGenerations } = await supabase
+      .from("generations")
+      .delete()
+      .eq("user_id", testUserId)
+      .select();
+
+    if (deleteGenerationsError) {
+      console.error("Error deleting test generations:", deleteGenerationsError.message);
+      throw deleteGenerationsError;
+    }
+
+    const generationsCount = deletedGenerations?.length ?? 0;
+    console.log(`Successfully cleaned up generations. Deleted ${generationsCount} records.`);
+
+    // Delete error logs for test user and return the count of deleted records
+    const { error: deleteErrorLogsError, data: deletedErrorLogs } = await supabase
+      .from("generation_error_logs")
+      .delete()
+      .eq("user_id", testUserId)
+      .select();
+
+    if (deleteErrorLogsError) {
+      console.error("Error deleting test error logs:", deleteErrorLogsError.message);
+      throw deleteErrorLogsError;
+    }
+
+    const errorLogsCount = deletedErrorLogs?.length ?? 0;
+    console.log(`Successfully cleaned up error logs. Deleted ${errorLogsCount} records.`);
+
+    console.log(`Total records deleted: ${flashcardsCount + generationsCount + errorLogsCount}`);
   } catch (error) {
     console.error("Failed to clean up test data:", error);
     throw error;
