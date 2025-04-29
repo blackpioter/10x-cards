@@ -46,7 +46,10 @@ interface CreateFlashcardModalProps {
 const mockUpdateFlashcard = vi.fn().mockResolvedValue({});
 const mockUpdateFlashcardWithError = vi.fn().mockImplementation(() => {
   const error = new Error("Update failed");
-  console.error("Error updating flashcard:", error); // Manually trigger error logging
+
+  // We use console.error here to simulate the actual error logging behavior of the component
+  // eslint-disable-next-line no-console
+  console.error("Error updating flashcard:", error);
   return Promise.reject(error);
 });
 
@@ -276,12 +279,12 @@ describe("FlashcardsView", () => {
     });
 
     it("should handle error during updateFlashcard", async () => {
-      // Wywołujemy błąd bezpośrednio w kodzie testu
       const error = new Error("Update failed");
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => void 0);
 
-      // Musimy manualnie wywołać console.error w teście, używając tej samej struktury
+      // We need to manually trigger console.error to match the component's error handling behavior
       const updateFlashcardMock = vi.fn().mockImplementation(() => {
+        // eslint-disable-next-line no-console
         console.error("Error updating flashcard:", error);
         return Promise.reject(error);
       });
