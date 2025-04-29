@@ -39,7 +39,7 @@ export default defineConfig({
     command: "npm run dev:e2e",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    stdout: "pipe",
+    stdout: "ignore",
     stderr: "pipe",
     timeout: 30000,
   },
