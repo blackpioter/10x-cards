@@ -3,6 +3,9 @@ import { z } from "zod";
 import type { GenerateFlashcardsCommand } from "../../../types";
 import { createGenerationService } from "../../../lib/generation.service";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
+import { createLogger } from "@/lib/logger";
+
+const apiLogger = createLogger("api:generations");
 
 // Prevent prerendering of API route
 export const prerender = false;
@@ -20,6 +23,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
     // Check authentication
     const authResult = await locals.auth();
     if (!authResult) {
+      apiLogger.warn("Unauthorized generation request");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -34,7 +38,10 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
     const validationResult = generateFlashcardsSchema.safeParse(body);
 
     if (!validationResult.success) {
-      console.error("Validation failed:", validationResult.error.errors);
+      apiLogger.warn("Validation failed for generation request", {
+        errors: validationResult.error.errors,
+        userId: authResult.user.id,
+      });
       return new Response(
         JSON.stringify({
           error: "Validation failed",
@@ -56,12 +63,20 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
     const generationService = createGenerationService(supabase);
     const result = await generationService.generateFlashcards(command, authResult.user.id);
 
+    apiLogger.info("Successfully generated flashcards", {
+      userId: authResult.user.id,
+      result,
+    });
+
     return new Response(JSON.stringify(result), {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error processing generation request:", error);
+    apiLogger.error("Error processing generation request", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

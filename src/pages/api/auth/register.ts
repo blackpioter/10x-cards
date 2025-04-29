@@ -1,18 +1,21 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
+import { createLogger } from "@/lib/logger";
+
+const authLogger = createLogger("auth:register");
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    console.log("Registration request received");
+    authLogger.info("Registration request received");
 
     // Check Content-Type
     const contentType = request.headers.get("content-type");
-    console.log("Content-Type:", contentType);
+    authLogger.debug("Request details", { contentType });
 
     if (!contentType || !contentType.includes("application/json")) {
-      console.log("Invalid Content-Type");
+      authLogger.warn("Invalid Content-Type received", { contentType });
       return new Response(
         JSON.stringify({
           error: "Content-Type must be application/json",
@@ -29,9 +32,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     let body;
     try {
       body = await request.json();
-      console.log("Request body parsed:", { email: body.email }); // Log without password
+      authLogger.debug("Request body parsed", { email: body.email }); // Log without password
     } catch (e) {
-      console.error("JSON Parse Error:", e);
+      authLogger.error("JSON parse error", { error: e });
       return new Response(
         JSON.stringify({
           error: "Invalid JSON in request body",
@@ -49,7 +52,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Basic validation
     if (!email || !password) {
-      console.log("Missing required fields");
+      authLogger.warn("Missing required fields", { email: !!email, password: !!password });
       return new Response(JSON.stringify({ error: "Email and password are required" }), {
         status: 400,
         headers: {
@@ -60,14 +63,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
 
-    console.log("Calling Supabase signUp");
+    authLogger.debug("Calling Supabase signUp");
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (error) {
-      console.error("Supabase Auth Error:", error);
+      authLogger.error("Supabase auth error", { error: error.message });
       return new Response(JSON.stringify({ error: error.message }), {
         status: 400,
         headers: {
@@ -76,11 +79,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    console.log("Supabase signUp successful");
+    authLogger.info("Supabase signUp successful");
 
     // Check if user needs to confirm their email
     if (data?.user?.identities?.length === 0) {
-      console.log("Email confirmation required");
+      authLogger.info("Email confirmation required", { email });
       return new Response(
         JSON.stringify({
           message: "Please check your email for confirmation link",
@@ -94,7 +97,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    console.log("Registration successful, no email confirmation required");
+    authLogger.info("Registration successful, no email confirmation required", { email });
     return new Response(JSON.stringify({ user: data.user }), {
       status: 200,
       headers: {
@@ -102,7 +105,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       },
     });
   } catch (error) {
-    console.error("Registration Error:", error);
+    authLogger.error("Registration error", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return new Response(
       JSON.stringify({
         error: "Internal server error",

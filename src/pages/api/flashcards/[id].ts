@@ -4,6 +4,9 @@ import type { FlashcardUpdateDto } from "../../../types";
 import { FlashcardsError } from "../../../lib/flashcard.service";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
 import { createFlashcardService } from "../../../lib/flashcard.service";
+import { createLogger } from "@/lib/logger";
+
+const apiLogger = createLogger("api:flashcards");
 
 // Validation schema for update
 const flashcardUpdateSchema = z.object({
@@ -90,7 +93,11 @@ export const PATCH: APIRoute = async ({ request, params, locals, cookies }) => {
       }
     );
   } catch (error) {
-    console.error("Error updating flashcard:", error);
+    apiLogger.error("Error updating flashcard", {
+      id: params.id,
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
     if (error instanceof FlashcardsError) {
       return new Response(
@@ -157,7 +164,11 @@ export const DELETE: APIRoute = async ({ params, locals, cookies, request }) => 
       status: 204,
     });
   } catch (error) {
-    console.error("Error deleting flashcard:", error);
+    apiLogger.error("Error deleting flashcard", {
+      id: params.id,
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
     if (error instanceof FlashcardsError) {
       return new Response(
