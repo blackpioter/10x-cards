@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorNotification } from "../common/ErrorNotification";
+import { createLogger } from "@/lib/logger";
+
+// Utworzenie loggera dla tego komponentu
+const logger = createLogger("RegisterForm");
 
 interface RegisterFormState {
   email: string;
@@ -59,7 +63,9 @@ export function RegisterForm() {
         password: state.password,
       };
 
-      console.log("Sending registration request:", { email: payload.email }); // Log without password
+      // Używamy sanitizeData, żeby bezpiecznie zalogować dane (hasło zostanie zamaskowane)
+      const sanitizedPayload = logger.sanitizeData(payload);
+      logger.info("Sending registration request:", sanitizedPayload);
 
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -69,10 +75,10 @@ export function RegisterForm() {
         body: JSON.stringify(payload),
       });
 
-      console.log("Response status:", response.status);
+      logger.info("Response status:", response.status);
 
       const data = await response.json();
-      console.log("Response data:", data);
+      logger.info("Response data:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to create account");
@@ -90,7 +96,7 @@ export function RegisterForm() {
         window.location.href = "/generate";
       }
     } catch (error) {
-      console.error("Registration error:", error);
+      logger.error("Registration error:", error);
       setState((prev) => ({
         ...prev,
         isLoading: false,

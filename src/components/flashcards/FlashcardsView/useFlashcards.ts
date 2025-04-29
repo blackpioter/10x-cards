@@ -7,6 +7,7 @@ import type {
   PaginationDto,
   FlashcardStatsViewModel,
 } from "../../../types";
+import { logger } from "@/lib/logger";
 
 interface UseFlashcardsOptions {
   initialPage?: number;
@@ -125,7 +126,7 @@ export function useFlashcards({
         },
       }));
     } catch (error) {
-      console.error("Error fetching pending count:", error);
+      logger.error("Error fetching pending count:", error);
     }
   }, []);
 
@@ -135,7 +136,7 @@ export function useFlashcards({
       // Get total count
       const totalResponse = await fetch("/api/flashcards?page=1&page_size=10");
       if (!totalResponse.ok) {
-        console.error("Total count response not OK:", await totalResponse.text());
+        logger.error("Total count response not OK:", await totalResponse.text());
         throw new Error("Failed to fetch total count");
       }
       const totalData = await totalResponse.json();
@@ -147,7 +148,7 @@ export function useFlashcards({
         statuses.map(async (status) => {
           const response = await fetch(`/api/flashcards?status=${status}&page=1&page_size=10`);
           if (!response.ok) {
-            console.error(`Count response for ${status} not OK:`, await response.text());
+            logger.error(`Count response for ${status} not OK:`, await response.text());
             throw new Error(`Failed to fetch count for ${status} status`);
           }
 
@@ -175,7 +176,7 @@ export function useFlashcards({
         statusCounts: newStatusCounts,
       }));
     } catch (error) {
-      console.error("Error fetching status counts:", error);
+      logger.error("Error fetching status counts:", error);
     }
   }, []);
 

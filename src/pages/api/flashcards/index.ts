@@ -4,6 +4,9 @@ import type { FlashcardCreateCommand } from "../../../types";
 import { FlashcardsError } from "../../../lib/flashcard.service";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
 import { createFlashcardService } from "../../../lib/flashcard.service";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("flashcards-api");
 
 // Validation schemas
 const flashcardCreateSchema = z.object({
@@ -81,7 +84,7 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
       }
     );
   } catch (error) {
-    console.error("Error creating flashcards:", error);
+    logger.error("Error creating flashcards:", error);
 
     if (error instanceof FlashcardsError) {
       return new Response(
@@ -163,7 +166,7 @@ export const GET: APIRoute = async ({ request, locals, cookies }) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error fetching flashcards:", error);
+    logger.error("Error fetching flashcards:", error);
 
     if (error instanceof FlashcardsError) {
       return new Response(

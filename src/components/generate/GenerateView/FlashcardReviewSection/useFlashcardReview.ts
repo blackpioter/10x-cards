@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { FlashcardProposalViewModel } from "../../../../types";
 import { useFlashcardStats } from "./useFlashcardStats";
+import { logger } from "@/lib/logger";
 
 export function useFlashcardReview(
   initialFlashcards: FlashcardProposalViewModel[],
@@ -34,7 +35,7 @@ export function useFlashcardReview(
         throw new Error(`Failed to update ${failedUpdates.length} flashcards`);
       }
     } catch (error) {
-      console.error("Error updating flashcard statuses:", error);
+      logger.error("Error updating flashcard statuses:", error);
       throw error;
     }
   }, []);
@@ -48,7 +49,7 @@ export function useFlashcardReview(
         .then(() => {
           setPendingUpdates(new Map());
         })
-        .catch(console.error);
+        .catch((error) => logger.error("Failed to save changes:", error));
     }, 2000); // Save changes after 2 seconds of inactivity
 
     // If we have accumulated enough updates, save immediately
@@ -57,7 +58,7 @@ export function useFlashcardReview(
         .then(() => {
           setPendingUpdates(new Map());
         })
-        .catch(console.error);
+        .catch((error) => logger.error("Failed to save changes:", error));
       clearTimeout(timeoutId);
     }
 
@@ -137,7 +138,7 @@ export function useFlashcardReview(
           onComplete(updatedProposals);
         }
       } catch (error) {
-        console.error("Failed to update flashcard:", error);
+        logger.error("Failed to update flashcard:", error);
       }
     },
     [proposals, pendingUpdates, updateFlashcardStatus, onComplete]
@@ -166,7 +167,7 @@ export function useFlashcardReview(
 
       onComplete(updatedProposals);
     } catch (error) {
-      console.error("Failed to accept all flashcards:", error);
+      logger.error("Failed to accept all flashcards:", error);
     }
   }, [proposals, updateFlashcardStatus, onComplete]);
 

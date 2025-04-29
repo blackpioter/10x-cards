@@ -9,6 +9,7 @@ import { EditFlashcardModal } from "../../EditFlashcardModal";
 import { CreateFlashcardModal } from "../../CreateFlashcardModal";
 import { Button } from "@/components/ui/button";
 import type { FlashcardViewModel } from "@/types";
+import { logger } from "@/lib/logger";
 
 interface FlashcardsViewState {
   modals: {
@@ -107,7 +108,7 @@ export function FlashcardsView() {
         await updateFlashcard(id, front, back);
         handleCloseEditModal();
       } catch (error) {
-        console.error("Error updating flashcard:", error);
+        logger.error("Error updating flashcard:", error);
       }
     },
     [updateFlashcard, handleCloseEditModal]

@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { FlashcardForm } from "./FlashcardForm";
 import { Button } from "@/components/ui/button";
 import { Plus, PlusCircle } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface CreateFlashcardModalProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export function CreateFlashcardModal({ isOpen, onClose }: CreateFlashcardModalPr
         window.location.reload();
       }
     } catch (error) {
-      console.error("Error creating flashcard:", error);
+      logger.error("Error creating flashcard:", error);
     }
   };
 
