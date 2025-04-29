@@ -35,6 +35,14 @@ export default defineConfig({
   },
   outputDir: path.join(coverageDir, "screenshots"),
   snapshotDir: path.join(coverageDir, "screenshots"),
+  webServer: {
+    command: "npm run dev:e2e",
+    url: "http://localhost:3000",
+    reuseExistingServer: !process.env.CI,
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout: 30000,
+  },
   projects: [
     {
       name: "cleanup db",
