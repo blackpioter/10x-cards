@@ -1,4 +1,4 @@
-import { useState } from "react";
+import * as React from "react";
 import type {
   GenerateViewState,
   FlashcardProposalViewModel,
@@ -7,14 +7,17 @@ import type {
   GenerationCreateResponseDto,
 } from "../../../types";
 
-const STATES = {
+type Stage = GenerateViewState["stage"];
+
+const STATES: Record<string, Stage> = {
   INPUT: "input",
   GENERATING: "generating",
   REVIEW: "review",
+  COMPLETED: "completed",
 } as const;
 
 export function useGenerate() {
-  const [state, setState] = useState<GenerateViewState>({
+  const [state, setState] = React.useState<GenerateViewState>({
     stage: STATES.INPUT,
     error: undefined,
     proposals: undefined,
@@ -73,30 +76,45 @@ export function useGenerate() {
     }
   };
 
-  /**
-   * Handles completion of the flashcard generation process.
-   */
-  const handleComplete = async () => {
-    if (!state.generationId) {
-      setState((prev) => ({
-        ...prev,
-        error: "Generation ID is missing",
-      }));
-      return;
-    }
+  const handleComplete = async (proposals: FlashcardProposalViewModel[]) => {
+    console.log("[useGenerate] handleComplete called with proposals:", proposals.length);
+    console.log("[useGenerate] Current state:", state.stage);
 
-    try {
-      setState({
-        stage: STATES.INPUT,
-        error: undefined,
-        proposals: undefined,
-      });
-    } catch (error) {
-      setState((prev) => ({
+    // Immediately set the completed state
+    setState((prev) => {
+      console.log("[useGenerate] Setting completed state from:", prev.stage);
+
+      if (!prev.proposals) {
+        console.log("[useGenerate] No proposals in state, this should not happen");
+        return prev;
+      }
+
+      const newState: GenerateViewState = {
         ...prev,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
-      }));
-    }
+        stage: STATES.COMPLETED,
+        proposals: {
+          ...prev.proposals,
+          proposals,
+        },
+      };
+
+      console.log("[useGenerate] New state will be:", newState.stage);
+      return newState;
+    });
+  };
+
+  const handleGenerateNew = () => {
+    console.log("[useGenerate] handleGenerateNew called");
+    setState({
+      stage: STATES.INPUT,
+      error: undefined,
+      proposals: undefined,
+    });
+  };
+
+  const handleViewAll = () => {
+    console.log("[useGenerate] handleViewAll called");
+    window.location.href = "/flashcards";
   };
 
   const clearError = () => {
@@ -107,6 +125,8 @@ export function useGenerate() {
     state,
     handleGenerate,
     handleComplete,
+    handleGenerateNew,
+    handleViewAll,
     clearError,
   };
 }

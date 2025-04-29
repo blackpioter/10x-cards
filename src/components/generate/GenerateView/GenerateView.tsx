@@ -3,9 +3,19 @@ import { TextInputSection } from "../../TextInputSection";
 import { GenerationProgress } from "../../GenerationProgress";
 import { FlashcardReviewSection } from "./FlashcardReviewSection";
 import { ErrorNotification } from "../../common/ErrorNotification";
+import { CompletionModal } from "./CompletionModal";
+import * as React from "react";
 
 export function GenerateView() {
-  const { state, handleGenerate, handleComplete, clearError } = useGenerate();
+  const { state, handleGenerate, handleComplete, handleGenerateNew, handleViewAll, clearError } = useGenerate();
+
+  React.useEffect(() => {
+    console.log("[GenerateView] State changed:", {
+      stage: state.stage,
+      hasProposals: !!state.proposals,
+      error: state.error,
+    });
+  }, [state]);
 
   return (
     <div className="space-y-6" data-testid="generate-view">
@@ -33,6 +43,12 @@ export function GenerateView() {
           data-testid="flashcard-review-section"
         />
       )}
+
+      <CompletionModal
+        isOpen={state.stage === "completed"}
+        onGenerateNew={handleGenerateNew}
+        onViewAll={handleViewAll}
+      />
     </div>
   );
 }
