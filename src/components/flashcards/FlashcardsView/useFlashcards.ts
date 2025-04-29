@@ -329,7 +329,7 @@ export function useFlashcards({
         }));
       }
     },
-    [fetchStatusCounts]
+    [fetchStatusCounts, fetchPendingCount]
   );
 
   // Function to update flashcard content
