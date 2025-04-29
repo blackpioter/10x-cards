@@ -1,3 +1,9 @@
+/**
+ * This file is part of the E2E test infrastructure.
+ * We intentionally use console.log/error here for better visibility
+ * of the cleanup process in Playwright test output.
+ */
+/* eslint-disable no-console */
 import { test as teardown } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../src/db/database.types";
