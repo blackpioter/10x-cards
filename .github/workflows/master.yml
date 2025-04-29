@@ -54,14 +54,6 @@ jobs:
       - name: Run unit tests
         run: npm run test
 
-      - name: Upload test coverage
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-coverage
-          path: coverage
-          retention-days: 5
-
   build:
     name: Build Production
     needs: unit-test
