@@ -65,7 +65,9 @@ export const POST: APIRoute = async ({ request, locals, cookies }) => {
 
     apiLogger.info("Successfully generated flashcards", {
       userId: authResult.user.id,
-      result,
+      generationId: result.generation_id,
+      flashcardsCount: result.flashcard_proposals?.length ?? 0,
+      sourceTextLength: command.source_text.length,
     });
 
     return new Response(JSON.stringify(result), {
