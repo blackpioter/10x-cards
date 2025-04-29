@@ -34,22 +34,21 @@ export class OpenRouterService {
   private readonly _rateLimitConfig: RateLimitConfig;
   private _rateLimitInfo: RateLimitInfo;
 
-  private readonly _sensitiveFields = [
-    "apiKey",
-    "Authorization",
-    "authorization",
-    "key",
-    "secret",
-    "password",
-    "bearer_token",
-    "access_token",
-    "refresh_token",
-    "jwt_token",
-  ];
-
   constructor(config: OpenRouterConfig) {
     // Set up logging first so we can use it during validation
-    this._logger = new LoggingService({ serviceName: "OpenRouterService" });
+    this._logger = new LoggingService({
+      serviceName: "OpenRouterService",
+      // Dodajemy niestandardowe wrażliwe klucze specyficzne dla OpenRouter
+      sensitiveKeys: [
+        "apiKey",
+        "Authorization",
+        "authorization",
+        "bearer_token",
+        "access_token",
+        "refresh_token",
+        "jwt_token",
+      ],
+    });
 
     // Validate configuration
     const validatedConfig = configSchema.parse(config);
@@ -63,7 +62,7 @@ export class OpenRouterService {
 
     // Now we can start logging
     this._logger.debug("Initializing OpenRouter service", {
-      config: this._sanitizeData(validatedConfig),
+      config: this._logger.sanitizeData(validatedConfig),
     });
 
     // Set default model parameters
@@ -191,7 +190,7 @@ export class OpenRouterService {
         this._lastResponse = response;
         this._logger.info("API call successful", {
           status: response.status,
-          headers: this._sanitizeHeaders(response.headers),
+          headers: this._logger.sanitizeHeaders(response.headers),
         });
         return response;
       } catch (error) {
@@ -372,43 +371,5 @@ export class OpenRouterService {
     const estimatedTokens = Math.ceil((this.systemMessage?.length || 0) / 4 + (this.userMessage?.length || 0) / 4);
     this._logger.debug("Estimated tokens", { estimatedTokens });
     return estimatedTokens;
-  }
-
-  private _sanitizeData(data: unknown): unknown {
-    if (!data) return data;
-
-    if (typeof data === "string") {
-      return data;
-    }
-
-    if (Array.isArray(data)) {
-      return data.map((item) => this._sanitizeData(item));
-    }
-
-    if (typeof data === "object") {
-      const sanitized: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(data)) {
-        if (this._sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
-          sanitized[key] = "[REDACTED]";
-        } else {
-          sanitized[key] = this._sanitizeData(value);
-        }
-      }
-      return sanitized;
-    }
-
-    return data;
-  }
-
-  private _sanitizeHeaders(headers: Headers): Record<string, string> {
-    const sanitizedHeaders: Record<string, string> = {};
-    headers.forEach((value, key) => {
-      if (this._sensitiveFields.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
-        sanitizedHeaders[key] = "[REDACTED]";
-      } else {
-        sanitizedHeaders[key] = value;
-      }
-    });
-    return sanitizedHeaders;
   }
 }
