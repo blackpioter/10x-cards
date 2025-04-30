@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { GenerateView } from "./GenerateView";
-import { useGenerate } from "./useGenerate";
+import { useGenerate } from "./hooks/useGenerate";
 import "@testing-library/jest-dom";
-import type { FlashcardProposalViewModel } from "../../../types";
+import type { FlashcardProposalViewModel } from "@/types";
 
 // Mock the logger
 vi.mock("@/lib/logger", () => ({
@@ -45,7 +45,7 @@ vi.mock("global", async () => {
 });
 
 // Mock the hook
-vi.mock("./useGenerate", () => ({
+vi.mock("./hooks/useGenerate", () => ({
   useGenerate: vi.fn(() => ({
     state: {
       stage: "input",

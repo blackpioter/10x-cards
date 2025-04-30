@@ -1,4 +1,4 @@
-import { useGenerate } from "./useGenerate";
+import { useGenerate } from "./hooks/useGenerate";
 import { TextInputSection } from "../../TextInputSection";
 import { GenerationProgress } from "../../GenerationProgress";
 import { FlashcardReviewSection } from "./FlashcardReviewSection";

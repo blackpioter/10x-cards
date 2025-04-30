@@ -5,7 +5,7 @@ import type {
   FlashcardProposalListViewModel,
   FlashcardProposalDto,
   GenerationCreateResponseDto,
-} from "../../../types";
+} from "@/types";
 
 type Stage = GenerateViewState["stage"];
 
