@@ -1,4 +1,5 @@
 import { type Page, type Locator, expect } from "@playwright/test";
+import { TEST_IDS } from "../../src/components/FlashcardList/constants";
 
 export class FlashcardListPage {
   readonly page: Page;
@@ -9,24 +10,24 @@ export class FlashcardListPage {
   constructor(page: Page) {
     this.page = page;
     this.flashcardsView = page.getByTestId("flashcards-view");
-    this.container = page.getByTestId("flashcard-list");
-    this.filters = page.getByTestId("flashcard-filters");
+    this.container = page.getByTestId(TEST_IDS.CONTAINER);
+    this.filters = page.getByTestId(TEST_IDS.FILTERS.CONTAINER);
   }
 
   // Flashcard actions
   async acceptFlashcard(index: number) {
     const flashcard = this.getFlashcardByIndex(index);
-    await flashcard.getByTestId("accept-flashcard").click();
+    await flashcard.getByTestId(TEST_IDS.ACTIONS.ACCEPT).click();
   }
 
   async rejectFlashcard(index: number) {
     const flashcard = this.getFlashcardByIndex(index);
-    await flashcard.getByTestId("reject-flashcard").click();
+    await flashcard.getByTestId(TEST_IDS.ACTIONS.REJECT).click();
   }
 
   async editFlashcard(index: number, { front, back }: { front?: string; back?: string }) {
     const flashcard = this.getFlashcardByIndex(index);
-    await flashcard.getByTestId("edit-flashcard").click();
+    await flashcard.getByTestId(TEST_IDS.ACTIONS.EDIT).click();
 
     if (front !== undefined) {
       await flashcard.getByLabel("Front").fill(front);
@@ -35,17 +36,17 @@ export class FlashcardListPage {
       await flashcard.getByLabel("Back").fill(back);
     }
 
-    await flashcard.getByTestId("save-edit").click();
+    await flashcard.getByTestId(TEST_IDS.ACTIONS.SAVE_EDIT).click();
   }
 
   async restoreFlashcard(index: number) {
     const flashcard = this.getFlashcardByIndex(index);
-    await flashcard.getByTestId("restore-flashcard").click();
+    await flashcard.getByTestId(TEST_IDS.ACTIONS.RESTORE).click();
   }
 
   // Bulk actions
   async acceptAll() {
-    await this.container.getByTestId("accept-all").click();
+    await this.container.getByTestId(TEST_IDS.ACTIONS.ACCEPT_ALL).click();
   }
 
   // Stats
@@ -68,7 +69,7 @@ export class FlashcardListPage {
 
   // Assertions
   async expectFlashcardCount(count: number) {
-    await expect(this.container.getByTestId("flashcard-item")).toHaveCount(count);
+    await expect(this.container.getByTestId(TEST_IDS.ITEM)).toHaveCount(count);
   }
 
   async expectFlashcardStatus(index: number, status: "pending" | "accepted" | "rejected") {
@@ -79,20 +80,21 @@ export class FlashcardListPage {
   async expectFlashcardContent(index: number, { front, back }: { front?: string; back?: string }) {
     const flashcard = this.getFlashcardByIndex(index);
     if (front !== undefined) {
-      await expect(flashcard.getByTestId("front-content")).toHaveText(front);
+      await expect(flashcard.getByTestId(TEST_IDS.CONTENT.FRONT)).toHaveText(front);
     }
     if (back !== undefined) {
-      await expect(flashcard.getByTestId("back-content")).toHaveText(back);
+      await expect(flashcard.getByTestId(TEST_IDS.CONTENT.BACK)).toHaveText(back);
     }
   }
 
   // Helper methods
   private getFlashcardByIndex(index: number): Locator {
-    return this.container.getByTestId("flashcard-item").nth(index);
+    return this.container.getByTestId(TEST_IDS.ITEM).nth(index);
   }
 
   private async getFilterCount(filter: "all" | "pending" | "accepted" | "rejected"): Promise<number> {
-    const countElement = this.filters.getByTestId(`filter-${filter}-count`);
+    const filterKey = filter.toUpperCase() as "ALL" | "ACCEPTED" | "REJECTED";
+    const countElement = this.filters.getByTestId(TEST_IDS.FILTERS[filterKey].COUNT);
     await expect(countElement).toBeVisible({ timeout: 5000 });
     const text = await countElement.textContent();
     const match = text?.match(/\((\d+)\)/);
