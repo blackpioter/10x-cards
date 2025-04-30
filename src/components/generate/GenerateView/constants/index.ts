@@ -55,6 +55,7 @@ export const TEST_IDS = {
   },
   REVIEW_SECTION: {
     CONTAINER: "flashcard-review-section",
+    LIST: "flashcard-review-section-list",
     STATS: {
       CONTAINER: "review-section-stats",
       EDITED: "review-section-stat-edited",

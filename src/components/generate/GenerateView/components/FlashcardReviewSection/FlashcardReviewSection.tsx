@@ -8,19 +8,14 @@ import { TEST_IDS } from "../../constants";
 interface FlashcardReviewSectionProps {
   flashcards: FlashcardProposalViewModel[];
   onComplete: (proposals: FlashcardProposalViewModel[]) => void;
-  "data-testid"?: string;
 }
 
-export function FlashcardReviewSection({
-  flashcards,
-  onComplete,
-  "data-testid": testId = TEST_IDS.REVIEW_SECTION.CONTAINER,
-}: FlashcardReviewSectionProps) {
+export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardReviewSectionProps) {
   const { proposals, stats, filter, setFilter, handleItemAction, handleBulkAction, filteredProposals } =
     useFlashcardReview(flashcards, onComplete);
 
   return (
-    <div className="space-y-6" data-testid={testId}>
+    <div className="space-y-6" data-testid={TEST_IDS.REVIEW_SECTION.CONTAINER}>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">Review Flashcards</h2>
@@ -62,7 +57,7 @@ export function FlashcardReviewSection({
         onItemAction={handleItemAction}
         onBulkAction={handleBulkAction}
         stats={stats}
-        data-testid={`${testId}-list`}
+        data-testid={TEST_IDS.REVIEW_SECTION.LIST}
       />
     </div>
   );
