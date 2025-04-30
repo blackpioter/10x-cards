@@ -3,12 +3,14 @@ import { type Page, type Locator, expect } from "@playwright/test";
 export class FlashcardListPage {
   readonly page: Page;
   readonly container: Locator;
-  readonly reviewSection: Locator;
+  readonly flashcardsView: Locator;
+  readonly filters: Locator;
 
   constructor(page: Page) {
     this.page = page;
+    this.flashcardsView = page.getByTestId("flashcards-view");
     this.container = page.getByTestId("flashcard-list");
-    this.reviewSection = page.getByTestId("flashcard-review-section");
+    this.filters = page.getByTestId("flashcard-filters");
   }
 
   // Flashcard actions
@@ -48,27 +50,18 @@ export class FlashcardListPage {
 
   // Stats
   async getStats() {
-    const filterButtons = this.reviewSection.getByTestId("filter-buttons");
+    // Wait for the filters to be visible first
+    await expect(this.filters).toBeVisible({ timeout: 10000 });
 
-    // Get total from "All" button text which shows "(X)"
-    const allButtonText = (await filterButtons.getByTestId("filter-all").textContent()) || "";
-    const totalMatch = allButtonText.match(/\((\d+)\)/);
-    const total = totalMatch ? parseInt(totalMatch[1]) : 0;
-
-    // Get accepted from "Accepted" button text which shows "(X)"
-    const acceptedButtonText = (await filterButtons.getByTestId("filter-accepted").textContent()) || "";
-    const acceptedMatch = acceptedButtonText.match(/\((\d+)\)/);
-    const accepted = acceptedMatch ? parseInt(acceptedMatch[1]) : 0;
-
-    // Get rejected from "Rejected" button text which shows "(X)"
-    const rejectedButtonText = (await filterButtons.getByTestId("filter-rejected").textContent()) || "";
-    const rejectedMatch = rejectedButtonText.match(/\((\d+)\)/);
-    const rejected = rejectedMatch ? parseInt(rejectedMatch[1]) : 0;
+    // Get counts from filter buttons
+    const allCount = await this.getFilterCount("all");
+    const acceptedCount = await this.getFilterCount("accepted");
+    const rejectedCount = await this.getFilterCount("rejected");
 
     return {
-      total,
-      accepted,
-      rejected,
+      total: allCount,
+      accepted: acceptedCount,
+      rejected: rejectedCount,
       edited: 0, // We don't show edited count in filter buttons
     };
   }
@@ -98,8 +91,11 @@ export class FlashcardListPage {
     return this.container.getByTestId("flashcard-item").nth(index);
   }
 
-  private async getStatValue(stats: Locator, type: string): Promise<number> {
-    const text = await stats.getByTestId(`stat-${type}`).textContent();
-    return text ? parseInt(text) : 0;
+  private async getFilterCount(filter: "all" | "pending" | "accepted" | "rejected"): Promise<number> {
+    const countElement = this.filters.getByTestId(`filter-${filter}-count`);
+    await expect(countElement).toBeVisible({ timeout: 5000 });
+    const text = await countElement.textContent();
+    const match = text?.match(/\((\d+)\)/);
+    return match ? parseInt(match[1]) : 0;
   }
 }
