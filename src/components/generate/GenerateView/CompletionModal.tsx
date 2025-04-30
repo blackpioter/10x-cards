@@ -24,7 +24,7 @@ export function CompletionModal({ isOpen, onGenerateNew, onViewAll }: Completion
 
   return (
     <Dialog open={true} modal>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" data-testid="completion-modal">
         <DialogHeader>
           <DialogTitle>Flashcards Review Complete</DialogTitle>
           <DialogDescription>You have reviewed all flashcards. What would you like to do next?</DialogDescription>
@@ -37,6 +37,7 @@ export function CompletionModal({ isOpen, onGenerateNew, onViewAll }: Completion
               onGenerateNew();
             }}
             className="sm:order-1"
+            data-testid="generate-new-button"
           >
             Generate New Flashcards
           </Button>
@@ -45,6 +46,7 @@ export function CompletionModal({ isOpen, onGenerateNew, onViewAll }: Completion
               console.log("[CompletionModal] View All clicked");
               onViewAll();
             }}
+            data-testid="view-all-button"
           >
             View All Flashcards
           </Button>
