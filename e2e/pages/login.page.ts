@@ -1,18 +1,26 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 export class LoginPage {
-  constructor(public readonly page: Page) {}
-
-  // Locators
   readonly url = "/login";
-  readonly emailInput = this.page.getByTestId("login-email-input");
-  readonly passwordInput = this.page.getByTestId("login-password-input");
-  readonly submitButton = this.page.getByTestId("login-submit-button");
-  readonly forgotPasswordLink = this.page.getByTestId("forgot-password-link");
-  readonly registerLink = this.page.getByTestId("register-link");
-  readonly errorNotification = this.page.getByTestId("login-error-notification");
-  readonly formContainer = this.page.getByTestId("login-form-container");
-  readonly loginHeader = this.page.getByTestId("login-header");
+  readonly emailInput;
+  readonly passwordInput;
+  readonly submitButton;
+  readonly forgotPasswordLink;
+  readonly registerLink;
+  readonly errorNotification;
+  readonly formContainer;
+  readonly loginHeader;
+
+  constructor(public readonly page: Page) {
+    this.emailInput = this.page.getByTestId("login-email-input");
+    this.passwordInput = this.page.getByTestId("login-password-input");
+    this.submitButton = this.page.getByTestId("login-submit-button");
+    this.forgotPasswordLink = this.page.getByTestId("forgot-password-link");
+    this.registerLink = this.page.getByTestId("register-link");
+    this.errorNotification = this.page.getByTestId("error-notification");
+    this.formContainer = this.page.getByTestId("login-form-container");
+    this.loginHeader = this.page.getByTestId("login-header");
+  }
 
   // Actions
   async goto() {
@@ -27,13 +35,15 @@ export class LoginPage {
 
   async getErrorMessage() {
     const error = await this.errorNotification;
-    return error.isVisible() ? error.textContent() : null;
+    const isVisible = await error.isVisible();
+    return isVisible ? error.textContent() : null;
   }
 
   async closeErrorNotification() {
     const error = await this.errorNotification;
-    if (await error.isVisible()) {
-      await error.getByRole("button", { name: "Close error notification" }).click();
+    const isVisible = await error.isVisible();
+    if (isVisible) {
+      await error.getByTestId("error-notification-close-button").click();
     }
   }
 
