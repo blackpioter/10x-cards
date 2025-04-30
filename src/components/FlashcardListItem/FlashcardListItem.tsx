@@ -3,7 +3,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, X, Edit2, RotateCcw } from "lucide-react";
-import type { FlashcardProposalViewModel } from "../types";
+import type { FlashcardProposalViewModel } from "@/types";
+import { TEST_IDS } from "../FlashcardList/constants";
 
 interface FlashcardListItemProps {
   proposal: FlashcardProposalViewModel;
@@ -60,7 +61,7 @@ export function FlashcardListItem({
   };
 
   return (
-    <Card className={`${getStatusColor()} transition-all h-full flex flex-col`} data-testid="flashcard-item">
+    <Card className={`${getStatusColor()} transition-all h-full flex flex-col`} data-testid={TEST_IDS.ITEM}>
       <CardContent className="flex-1 p-3 space-y-3">
         {isEditing ? (
           // Edit mode
@@ -99,13 +100,13 @@ export function FlashcardListItem({
           <>
             <div>
               <div className="text-sm font-medium mb-1">Front</div>
-              <div className="text-sm text-muted-foreground line-clamp-3" data-testid="front-content">
+              <div className="text-sm text-muted-foreground line-clamp-3" data-testid={TEST_IDS.CONTENT.FRONT}>
                 {proposal.front}
               </div>
             </div>
             <div>
               <div className="text-sm font-medium mb-1">Back</div>
-              <div className="text-sm text-muted-foreground line-clamp-3" data-testid="back-content">
+              <div className="text-sm text-muted-foreground line-clamp-3" data-testid={TEST_IDS.CONTENT.BACK}>
                 {proposal.back}
               </div>
             </div>
@@ -121,11 +122,11 @@ export function FlashcardListItem({
                 size="sm"
                 onClick={handleSave}
                 disabled={!editedFront.trim() || !editedBack.trim()}
-                data-testid="save-edit"
+                data-testid={TEST_IDS.ACTIONS.SAVE_EDIT}
               >
                 Save
               </Button>
-              <Button size="sm" variant="ghost" onClick={onCancelEdit} data-testid="cancel-edit">
+              <Button size="sm" variant="ghost" onClick={onCancelEdit} data-testid={TEST_IDS.ACTIONS.CANCEL_EDIT}>
                 Cancel
               </Button>
             </>
@@ -137,7 +138,7 @@ export function FlashcardListItem({
                 onClick={proposal.status === "accepted" ? onReset : onAccept}
                 className="h-7 px-2"
                 title={proposal.status === "accepted" ? "Withdraw acceptance" : "Accept"}
-                data-testid="accept-flashcard"
+                data-testid={TEST_IDS.ACTIONS.ACCEPT}
               >
                 <Check className="h-3.5 w-3.5" />
               </Button>
@@ -147,7 +148,7 @@ export function FlashcardListItem({
                 onClick={proposal.status === "rejected" ? onReset : onReject}
                 className="h-7 px-2"
                 title={proposal.status === "rejected" ? "Withdraw rejection" : "Reject"}
-                data-testid="reject-flashcard"
+                data-testid={TEST_IDS.ACTIONS.REJECT}
               >
                 <X className="h-3.5 w-3.5" />
               </Button>
@@ -165,7 +166,7 @@ export function FlashcardListItem({
               className="h-7 px-2"
               title="Edit"
               disabled={proposal.status === "accepted" || proposal.status === "rejected"}
-              data-testid="edit-flashcard"
+              data-testid={TEST_IDS.ACTIONS.EDIT}
             >
               <Edit2 className="h-3.5 w-3.5" />
             </Button>
@@ -178,7 +179,7 @@ export function FlashcardListItem({
               className="h-7 px-2"
               title="Reset to original content"
               disabled={proposal.status === "accepted" || proposal.status === "rejected"}
-              data-testid="restore-flashcard"
+              data-testid={TEST_IDS.ACTIONS.RESTORE}
             >
               <RotateCcw className="h-3.5 w-3.5" />
             </Button>
