@@ -4,6 +4,7 @@ import { LoginPage } from "../../pages/login.page";
 // Get test credentials from environment variables
 const E2E_USERNAME = process.env.E2E_USERNAME ?? "test@example.com";
 const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "password123";
+const CURRENT_ENV = process.env.PUBLIC_ENV_NAME ?? "dev";
 
 test.describe("Login Form", () => {
   let loginPage: LoginPage;
@@ -74,9 +75,18 @@ test.describe("Login Form", () => {
     await expect(loginPage.page).toHaveURL("/forgot-password");
   });
 
-  test("should navigate to register page", async () => {
-    await loginPage.navigateToRegister();
-    await expect(loginPage.page).toHaveURL("/register");
+  test.describe("register navigation", () => {
+    if (CURRENT_ENV === "dev") {
+      test("should show and navigate to register page", async () => {
+        await expect(loginPage.registerLink).toBeVisible();
+        await loginPage.navigateToRegister();
+        await expect(loginPage.page).toHaveURL("/register");
+      });
+    } else {
+      test("should not show register link", async () => {
+        await expect(loginPage.registerLink).toBeHidden();
+      });
+    }
   });
 
   test("should handle network errors", async () => {

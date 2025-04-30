@@ -1,15 +1,15 @@
-import type { Page } from "@playwright/test";
+import type { Page, Locator } from "@playwright/test";
 
 export class LoginPage {
   readonly url = "/login";
-  readonly emailInput;
-  readonly passwordInput;
-  readonly submitButton;
-  readonly forgotPasswordLink;
-  readonly registerLink;
-  readonly errorNotification;
-  readonly formContainer;
-  readonly loginHeader;
+  readonly emailInput: Locator;
+  readonly passwordInput: Locator;
+  readonly submitButton: Locator;
+  readonly forgotPasswordLink: Locator;
+  readonly registerLink: Locator;
+  readonly errorNotification: Locator;
+  readonly formContainer: Locator;
+  readonly loginHeader: Locator;
 
   constructor(public readonly page: Page) {
     this.emailInput = this.page.getByTestId("login-email-input");
