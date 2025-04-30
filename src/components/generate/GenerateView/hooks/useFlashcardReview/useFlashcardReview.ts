@@ -1,6 +1,6 @@
 import * as React from "react";
-import type { FlashcardProposalViewModel } from "../../../../types";
-import { useFlashcardStats } from "./useFlashcardStats";
+import type { FlashcardProposalViewModel } from "../../../../../types";
+import { useFlashcardStats } from "../useFlashcardStats/useFlashcardStats";
 import { logger } from "@/lib/logger";
 
 export function useFlashcardReview(

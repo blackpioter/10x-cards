@@ -1,12 +1,11 @@
 import { test, expect, type Route } from "@playwright/test";
 import { GeneratePage } from "../pages/generate.page";
-import { FlashcardListPage } from "../pages/flashcard-list.page";
 import { LoginPage } from "../pages/login.page";
 import { MEMORY_TECHNIQUES_TEXT, SHORT_TEXT } from "../fixtures/generate.fixture";
+import { E2E_TEST_IDS } from "../constants/test-ids";
 
 test.describe("Generate View", () => {
   let generatePage: GeneratePage;
-  let flashcardList: FlashcardListPage;
   let loginPage: LoginPage;
 
   test.beforeEach(async ({ page }) => {
@@ -18,7 +17,6 @@ test.describe("Generate View", () => {
     }
 
     generatePage = new GeneratePage(page);
-    flashcardList = new FlashcardListPage(page);
     loginPage = new LoginPage(page);
 
     // Login before each test
@@ -42,52 +40,77 @@ test.describe("Generate View", () => {
     // Verify generation progress UI
     await generatePage.expectGenerationInProgress();
     await expect(page.getByText("Generating flashcards...")).toBeVisible();
-    await expect(page.getByTestId("generation-progress")).toBeVisible();
+    await expect(page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.GENERATION_PROGRESS.CONTAINER)).toBeVisible();
 
     // Wait for generation to complete
     await generatePage.waitForGenerationComplete();
 
-    // Verify flashcards were generated
+    // Verify flashcards were generated and review section is visible
     await generatePage.expectReviewSectionVisible();
-    const totalFlashcards = await page.getByTestId("flashcard-item").count();
-    expect(totalFlashcards).toBeGreaterThan(5); // Need at least 6 flashcards for the test
+
+    // Get initial stats
+    const initialStats = await generatePage.getReviewStats();
+    expect(initialStats.total).toBeGreaterThan(5);
+    expect(initialStats.reviewed).toBe(0);
+    expect(initialStats.accepted).toBe(0);
+    expect(initialStats.rejected).toBe(0);
 
     // Keep track of accepted and rejected counts
     let acceptedCount = 0;
     let rejectedCount = 0;
 
-    // Review all flashcards randomly
-    for (let i = 0; i < totalFlashcards; i++) {
+    // Review each flashcard one by one in the review section
+    for (let i = 0; i < initialStats.total; i++) {
+      // Get current flashcard content to verify it exists
+      const flashcard = await generatePage.getFlashcardContent(i);
+      expect(flashcard.front).toBeTruthy();
+      expect(flashcard.back).toBeTruthy();
+
+      // Randomly decide to accept or reject
       const shouldAccept = Math.random() < 0.5;
+
       if (shouldAccept) {
-        await flashcardList.acceptFlashcard(i);
+        await generatePage.acceptFlashcard(i);
         acceptedCount++;
       } else {
-        await flashcardList.rejectFlashcard(i);
+        await generatePage.rejectFlashcard(i);
         rejectedCount++;
       }
+
+      // Verify stats update after each review
+      const currentStats = await generatePage.getReviewStats();
+      expect(currentStats.reviewed).toBe(i + 1);
+      expect(currentStats.accepted).toBe(acceptedCount);
+      expect(currentStats.rejected).toBe(rejectedCount);
     }
 
-    // Wait for auto-save and completion modal
-    await page.waitForLoadState("networkidle");
+    // After reviewing all flashcards, verify final stats in the review section
+    const finalReviewStats = await generatePage.getReviewStats();
+    expect(finalReviewStats.reviewed).toBe(initialStats.total);
+    expect(finalReviewStats.accepted).toBe(acceptedCount);
+    expect(finalReviewStats.rejected).toBe(rejectedCount);
 
-    // Verify completion modal appears
+    // Wait for completion modal to appear
     await generatePage.expectCompletionModalVisible();
 
-    // Click "View All Flashcards" button
+    // Click "View All Flashcards" button in the completion modal
     await generatePage.clickViewAll();
 
     // Verify we're on the flashcards list page
-    await page.waitForLoadState("networkidle");
     await expect(page).toHaveURL("/flashcards");
+    await page.waitForLoadState("networkidle");
 
-    // Get stats from the flashcards list
-    const stats = await flashcardList.getStats();
+    // Get the counts from the filter buttons
+    const acceptedButtonText = await page.getByRole("button", { name: /Accepted \(\d+\)/ }).textContent();
+    const rejectedButtonText = await page.getByRole("button", { name: /Rejected \(\d+\)/ }).textContent();
 
-    // Verify the counts match our tracking
-    expect(stats.accepted).toBe(acceptedCount);
-    expect(stats.rejected).toBe(rejectedCount);
-    expect(stats.total).toBe(totalFlashcards);
+    // Extract numbers from button text (e.g., "Accepted (6)" -> 6)
+    const acceptedFlashcards = parseInt(acceptedButtonText?.match(/\((\d+)\)/)?.[1] || "0");
+    const rejectedFlashcards = parseInt(rejectedButtonText?.match(/\((\d+)\)/)?.[1] || "0");
+
+    expect(acceptedFlashcards).toBe(acceptedCount);
+    expect(rejectedFlashcards).toBe(rejectedCount);
+    expect(acceptedFlashcards + rejectedFlashcards).toBe(initialStats.total);
   });
 
   test("should show validation error for short text", async ({ page }) => {
@@ -95,10 +118,10 @@ test.describe("Generate View", () => {
     await generatePage.enterText(SHORT_TEXT);
 
     // Verify validation state
-    const generateButton = await page.getByTestId("generate-button");
+    const generateButton = await page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.SUBMIT);
     await expect(generateButton).toBeDisabled();
 
-    const validationMessage = await page.getByTestId("characters-needed");
+    const validationMessage = await page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.CHARACTERS_NEEDED);
     await expect(validationMessage).toBeVisible();
     await expect(validationMessage).toContainText("characters needed");
   });

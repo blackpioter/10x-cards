@@ -1,4 +1,5 @@
 import { type Page, type Locator, expect } from "@playwright/test";
+import { E2E_TEST_IDS } from "../constants/test-ids";
 
 export class GeneratePage {
   readonly page: Page;
@@ -13,12 +14,12 @@ export class GeneratePage {
   constructor(page: Page) {
     this.page = page;
 
-    // Initialize main component locators
-    this.textInputSection = page.getByTestId("text-input-form");
-    this.generationProgress = page.getByTestId("generation-progress");
-    this.flashcardReviewSection = page.getByTestId("flashcard-review-section");
-    this.errorNotification = page.getByTestId("error-notification");
-    this.completionModal = page.getByTestId("completion-modal");
+    // Initialize main component locators using shared constants
+    this.textInputSection = page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.FORM);
+    this.generationProgress = page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.GENERATION_PROGRESS.CONTAINER);
+    this.flashcardReviewSection = page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.CONTAINER);
+    this.errorNotification = page.getByTestId(E2E_TEST_IDS.ERROR.CONTAINER);
+    this.completionModal = page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.COMPLETION_MODAL.CONTAINER);
   }
 
   // Navigation
@@ -28,7 +29,7 @@ export class GeneratePage {
 
   // Text Input Section actions
   async enterText(text: string) {
-    const textArea = this.textInputSection.getByTestId("source-text-input");
+    const textArea = this.textInputSection.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.TEXTAREA);
     await textArea.fill(text);
   }
 
@@ -39,72 +40,123 @@ export class GeneratePage {
       if (toolbar) toolbar.remove();
     });
 
-    const generateButton = this.textInputSection.getByTestId("generate-button");
+    const generateButton = this.textInputSection.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.SUBMIT);
 
-    // Check if button is enabled before proceeding
-    const isEnabled = await generateButton.isEnabled();
-    if (!isEnabled) {
-      return; // Don't try to click or wait for progress if button is disabled
-    }
-
-    await generateButton.click({ force: true });
+    // Wait for button to be enabled and visible
+    await expect(generateButton).toBeEnabled();
+    await expect(generateButton).toBeVisible();
+    await generateButton.click();
 
     // Wait for the generation to start only if requested
     if (options.waitForProgress) {
-      await expect(this.generationProgress).toBeVisible({ timeout: 10000 });
+      await expect(this.generationProgress).toBeVisible();
     }
   }
 
   async getCharacterCount() {
-    const counter = this.textInputSection.getByTestId("character-count");
+    const counter = this.textInputSection.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.CHARACTER_COUNT);
     return await counter.textContent();
   }
 
   async getCharactersNeeded() {
-    const needed = this.textInputSection.getByTestId("characters-needed");
+    const needed = this.textInputSection.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.CHARACTERS_NEEDED);
     return await needed.textContent();
   }
 
   // Generation Progress actions
   async waitForGenerationComplete() {
-    // Wait for the review section to appear, which indicates generation is complete
+    // Wait for review section to be visible
     await expect(this.flashcardReviewSection).toBeVisible({ timeout: 30000 });
+    await this.page.waitForLoadState("networkidle");
   }
 
   async cancelGeneration() {
-    const cancelButton = this.generationProgress.getByTestId("cancel-generation");
+    const cancelButton = this.generationProgress.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.GENERATION_PROGRESS.CANCEL);
     await cancelButton.click();
   }
 
-  // Flashcard Review Section actions
-  async filterFlashcards(filter: "all" | "accepted" | "rejected") {
-    const filterButton = this.flashcardReviewSection.getByTestId(`filter-${filter}`);
-    await filterButton.click();
+  // Review Section actions
+  async acceptFlashcard(index: number) {
+    const acceptButtons = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_ITEM.ACTIONS.ACCEPT);
+    await acceptButtons.nth(index).click();
+    await this.page.waitForLoadState("networkidle");
   }
 
-  async getFlashcardsCount() {
-    const allButton = this.flashcardReviewSection.getByTestId("filter-all");
-    const countText = await allButton.textContent();
-    const match = countText?.match(/\((\d+)\)/);
-    return match ? parseInt(match[1]) : 0;
+  async rejectFlashcard(index: number) {
+    const rejectButtons = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_ITEM.ACTIONS.REJECT);
+    await rejectButtons.nth(index).click();
+    await this.page.waitForLoadState("networkidle");
+  }
+
+  async editFlashcard(index: number, { front, back }: { front?: string; back?: string }) {
+    // Click edit button for the flashcard
+    const editButton = this.page.getByRole("button", { name: "Edit" }).nth(index);
+    await expect(editButton).toBeEnabled();
+    await editButton.click();
+
+    // Fill in the form if values provided
+    if (front !== undefined) {
+      await this.page.getByLabel("Front").fill(front);
+    }
+    if (back !== undefined) {
+      await this.page.getByLabel("Back").fill(back);
+    }
+
+    // Save changes
+    await this.page.getByRole("button", { name: "Save" }).click();
   }
 
   async acceptAllFlashcards() {
-    const acceptAllButton = this.flashcardReviewSection.getByTestId("accept-all");
+    const acceptAllButton = this.page.getByRole("button", { name: "Accept All" });
+    await expect(acceptAllButton).toBeEnabled();
     await acceptAllButton.click();
   }
 
-  async getFlashcardStats() {
-    const stats = this.flashcardReviewSection.getByTestId("flashcard-stats");
-    const editedCount = await stats.getByTestId("stat-edited").textContent();
-    const acceptedCount = await stats.getByTestId("stat-accepted").textContent();
-    const rejectedCount = await stats.getByTestId("stat-rejected").textContent();
+  async getReviewStats() {
+    const statsContainer = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_LIST.STATS.CONTAINER);
+
+    // Wait for stats to be visible and contain numbers
+    await expect(statsContainer).toBeVisible();
+    await expect(statsContainer).toContainText(/\d+/);
+
+    // Get individual stat elements
+    const reviewedText = await statsContainer.textContent();
+    const editedCount = await this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_LIST.STATS.EDITED).textContent();
+    const acceptedCount = await this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_LIST.STATS.ACCEPTED).textContent();
+    const rejectedCount = await this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_LIST.STATS.REJECTED).textContent();
+
+    // Parse reviewed and total from the text
+    const reviewMatch = reviewedText?.match(/(\d+) of (\d+) reviewed/);
+    if (!reviewMatch) {
+      throw new Error("Could not parse review stats - invalid format of reviewed text");
+    }
 
     return {
+      reviewed: parseInt(reviewMatch[1]),
+      total: parseInt(reviewMatch[2]),
       edited: parseInt(editedCount || "0"),
       accepted: parseInt(acceptedCount || "0"),
       rejected: parseInt(rejectedCount || "0"),
     };
+  }
+
+  async filterFlashcards(filter: "all" | "accepted" | "rejected") {
+    const buttonText = {
+      all: /All \(\d+\)/,
+      accepted: /Accepted \(\d+\)/,
+      rejected: /Rejected \(\d+\)/,
+    };
+    await this.page.getByRole("button", { name: buttonText[filter] }).click();
+  }
+
+  async getFlashcardContent(index: number) {
+    const flashcardFronts = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_ITEM.CONTENT.FRONT);
+    const flashcardBacks = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_ITEM.CONTENT.BACK);
+
+    const front = await flashcardFronts.nth(index).textContent();
+    const back = await flashcardBacks.nth(index).textContent();
+
+    return { front, back };
   }
 
   // Completion Modal actions
@@ -113,36 +165,13 @@ export class GeneratePage {
   }
 
   async clickGenerateNew() {
-    await this.completionModal.getByTestId("generate-new-button").click();
+    await this.completionModal.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.COMPLETION_MODAL.GENERATE_NEW).click();
     await expect(this.textInputSection).toBeVisible();
   }
 
   async clickViewAll() {
-    await this.completionModal.getByTestId("view-all-button").click();
+    await this.completionModal.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.COMPLETION_MODAL.VIEW_ALL).click();
     await this.page.waitForURL("/flashcards");
-  }
-
-  async expectCompletionModalVisible() {
-    await expect(this.completionModal).toBeVisible();
-  }
-
-  async waitForReviewComplete() {
-    // Wait for completion modal to appear
-    await this.waitForCompletionModal();
-  }
-
-  // Error handling
-  async getErrorMessage() {
-    if (await this.errorNotification.isVisible()) {
-      return await this.errorNotification.getByTestId("error-message").textContent();
-    }
-    return null;
-  }
-
-  async dismissError() {
-    if (await this.errorNotification.isVisible()) {
-      await this.errorNotification.getByTestId("close-error-button").click();
-    }
   }
 
   // State assertions
@@ -158,13 +187,14 @@ export class GeneratePage {
     await expect(this.flashcardReviewSection).toBeVisible();
   }
 
-  async expectErrorVisible(errorType?: string) {
-    // First wait for the notification to be visible
-    await expect(this.errorNotification).toBeVisible({ timeout: 10000 });
+  async expectCompletionModalVisible() {
+    await expect(this.completionModal).toBeVisible();
+  }
 
+  async expectErrorVisible(errorType?: string) {
+    await expect(this.errorNotification).toBeVisible();
     if (errorType) {
-      // Wait for the title text to be visible in the notification
-      await expect(this.errorNotification).toContainText(errorType, { timeout: 10000 });
+      await expect(this.errorNotification).toContainText(errorType);
     }
   }
 }

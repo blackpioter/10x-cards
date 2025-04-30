@@ -1,22 +1,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-
-interface TextInputSectionProps {
-  onGenerate: (text: string) => void;
-  isGenerating: boolean;
-}
+import { GENERATION_CONFIG, ERROR_MESSAGES, TEST_IDS } from "../../constants";
+import type { TextInputSectionProps } from "../../types";
 
 export function TextInputSection({ onGenerate, isGenerating }: TextInputSectionProps) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const validateText = (value: string) => {
-    if (value.length < 1000) {
-      return "Text must be at least 1000 characters long";
+    if (value.length < GENERATION_CONFIG.MIN_TEXT_LENGTH) {
+      return ERROR_MESSAGES.INVALID_TEXT_LENGTH;
     }
-    if (value.length > 10000) {
-      return "Text must not exceed 10000 characters";
+    if (value.length > GENERATION_CONFIG.MAX_TEXT_LENGTH) {
+      return ERROR_MESSAGES.INVALID_TEXT_LENGTH;
     }
     return null;
   };
@@ -38,29 +35,40 @@ export function TextInputSection({ onGenerate, isGenerating }: TextInputSectionP
   };
 
   const characterCount = text.length;
-  const isValid = !error && characterCount >= 1000 && characterCount <= 10000;
+  const isValid =
+    !error &&
+    characterCount >= GENERATION_CONFIG.MIN_TEXT_LENGTH &&
+    characterCount <= GENERATION_CONFIG.MAX_TEXT_LENGTH;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" data-testid="text-input-form">
+    <form onSubmit={handleSubmit} className="space-y-4" data-testid={TEST_IDS.TEXT_INPUT.FORM}>
       <div className="space-y-2">
         <Textarea
           value={text}
           onChange={handleTextChange}
-          placeholder="Enter your text here (1000-10000 characters)"
+          placeholder={`Enter your text here (${GENERATION_CONFIG.MIN_TEXT_LENGTH}-${GENERATION_CONFIG.MAX_TEXT_LENGTH} characters)`}
           className="min-h-[200px] resize-y"
           disabled={isGenerating}
-          data-testid="source-text-input"
+          data-testid={TEST_IDS.TEXT_INPUT.TEXTAREA}
         />
         <div className="flex justify-between text-sm">
-          <span className={error ? "text-destructive" : "text-muted-foreground"} data-testid="character-count">
+          <span
+            className={error ? "text-destructive" : "text-muted-foreground"}
+            data-testid={TEST_IDS.TEXT_INPUT.CHARACTER_COUNT}
+          >
             {error || `${characterCount} characters`}
           </span>
-          <span className="text-muted-foreground" data-testid="characters-needed">
-            {Math.max(1000 - characterCount, 0)} characters needed
+          <span className="text-muted-foreground" data-testid={TEST_IDS.TEXT_INPUT.CHARACTERS_NEEDED}>
+            {Math.max(GENERATION_CONFIG.MIN_TEXT_LENGTH - characterCount, 0)} characters needed
           </span>
         </div>
       </div>
-      <Button type="submit" disabled={!isValid || isGenerating} className="w-full" data-testid="generate-button">
+      <Button
+        type="submit"
+        disabled={!isValid || isGenerating}
+        className="w-full"
+        data-testid={TEST_IDS.TEXT_INPUT.SUBMIT}
+      >
         {isGenerating ? "Generating..." : "Generate Flashcards"}
       </Button>
     </form>

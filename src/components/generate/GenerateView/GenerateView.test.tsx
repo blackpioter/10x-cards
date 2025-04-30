@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { GenerateView } from "./GenerateView";
-import { useGenerate } from "./useGenerate";
+import { useGenerate } from "./hooks/useGenerate";
 import "@testing-library/jest-dom";
-import type { FlashcardProposalViewModel } from "../../../types";
+import type { FlashcardProposalViewModel } from "@/types";
 
 // Mock the logger
 vi.mock("@/lib/logger", () => ({
@@ -45,7 +45,7 @@ vi.mock("global", async () => {
 });
 
 // Mock the hook
-vi.mock("./useGenerate", () => ({
+vi.mock("./hooks/useGenerate", () => ({
   useGenerate: vi.fn(() => ({
     state: {
       stage: "input",
@@ -61,7 +61,7 @@ vi.mock("./useGenerate", () => ({
 }));
 
 // Mock child components to focus on unit testing logic
-vi.mock("../../TextInputSection", () => ({
+vi.mock("./components/TextInputSection", () => ({
   TextInputSection: ({ onGenerate }: TextInputSectionProps) => (
     <button data-testid="generate-btn" onClick={() => onGenerate("Sample text")}>
       Generate
@@ -69,11 +69,11 @@ vi.mock("../../TextInputSection", () => ({
   ),
 }));
 
-vi.mock("../../GenerationProgress", () => ({
+vi.mock("./components/GenerationProgress", () => ({
   GenerationProgress: ({ status }: GenerationProgressProps) => <div data-testid="progress">{status}</div>,
 }));
 
-vi.mock("./FlashcardReviewSection", () => ({
+vi.mock("./components/FlashcardReviewSection", () => ({
   FlashcardReviewSection: ({ flashcards, onComplete }: FlashcardReviewSectionProps) => (
     <div data-testid="review-section">
       <span>{flashcards.length} flashcards</span>

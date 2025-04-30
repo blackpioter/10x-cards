@@ -52,7 +52,16 @@ test.describe("Login Form", () => {
   });
 
   test("should show API error notification on failed login", async () => {
+    // Create a promise that resolves when the API request is made
+    const waitForRequest = loginPage.page.waitForResponse(
+      (response) => response.url().includes("/api/auth/login") && response.status() === 400
+    );
+
     await loginPage.login("invalid@example.com", "wrongpassword");
+
+    // Wait for the API response
+    await waitForRequest;
+
     await expect(loginPage.errorNotification).toBeVisible();
 
     // Manually close error notification
