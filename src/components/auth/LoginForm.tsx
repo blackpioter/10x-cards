@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorNotification } from "../common/ErrorNotification";
 import type { ErrorState } from "../../types";
+import { useFeatureFlag } from "../../lib/hooks/useFeatureFlag";
 
 interface LoginFormState {
   email: string;
@@ -18,6 +19,7 @@ export function LoginForm() {
     password: "",
     isLoading: false,
   });
+  const isRegisterEnabled = useFeatureFlag("registerEnabled");
 
   const isFormValid = state.email.trim() !== "" && state.password.trim() !== "";
 
@@ -135,12 +137,14 @@ export function LoginForm() {
           {state.isLoading ? "Signing in..." : "Sign in"}
         </Button>
 
-        <div className="text-center text-sm">
-          Don&apos;t have an account?{" "}
-          <a href="/register" className="text-primary hover:underline" data-testid="register-link">
-            Sign up
-          </a>
-        </div>
+        {isRegisterEnabled && (
+          <div className="text-center text-sm">
+            Don&apos;t have an account?{" "}
+            <a href="/register" className="text-primary hover:underline" data-testid="register-link">
+              Sign up
+            </a>
+          </div>
+        )}
       </form>
     </div>
   );

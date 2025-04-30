@@ -1,125 +1,135 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
 import { createLogger } from "@/lib/logger";
+import { featureFlagMiddleware } from "../../../middleware/featureFlags";
 
 const authLogger = createLogger("auth:register");
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  try {
-    authLogger.info("Registration request received");
+export const POST: APIRoute = async (context) => {
+  // Check if registration is enabled
+  const middlewareResponse = await featureFlagMiddleware(
+    context,
+    async () => {
+      try {
+        authLogger.info("Registration request received");
 
-    // Check Content-Type
-    const contentType = request.headers.get("content-type");
-    authLogger.debug("Request details", { contentType });
+        // Check Content-Type
+        const contentType = context.request.headers.get("content-type");
+        authLogger.debug("Request details", { contentType });
 
-    if (!contentType || !contentType.includes("application/json")) {
-      authLogger.warn("Invalid Content-Type received", { contentType });
-      return new Response(
-        JSON.stringify({
-          error: "Content-Type must be application/json",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
+        if (!contentType || !contentType.includes("application/json")) {
+          authLogger.warn("Invalid Content-Type received", { contentType });
+          return new Response(
+            JSON.stringify({
+              error: "Content-Type must be application/json",
+            }),
+            {
+              status: 400,
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
         }
-      );
-    }
 
-    let body;
-    try {
-      body = await request.json();
-      authLogger.debug("Request body parsed", { email: body.email }); // Log without password
-    } catch (e) {
-      authLogger.error("JSON parse error", { error: e });
-      return new Response(
-        JSON.stringify({
-          error: "Invalid JSON in request body",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
+        let body;
+        try {
+          body = await context.request.json();
+          authLogger.debug("Request body parsed", { email: body.email }); // Log without password
+        } catch (e) {
+          authLogger.error("JSON parse error", { error: e });
+          return new Response(
+            JSON.stringify({
+              error: "Invalid JSON in request body",
+            }),
+            {
+              status: 400,
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
         }
-      );
-    }
 
-    const { email, password } = body;
+        const { email, password } = body;
 
-    // Basic validation
-    if (!email || !password) {
-      authLogger.warn("Missing required fields", { email: !!email, password: !!password });
-      return new Response(JSON.stringify({ error: "Email and password are required" }), {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    }
+        // Basic validation
+        if (!email || !password) {
+          authLogger.warn("Missing required fields", { email: !!email, password: !!password });
+          return new Response(JSON.stringify({ error: "Email and password are required" }), {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        }
 
-    const supabase = createSupabaseServerInstance({ cookies, headers: request.headers });
+        const supabase = createSupabaseServerInstance({ cookies: context.cookies, headers: context.request.headers });
 
-    authLogger.debug("Calling Supabase signUp");
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+        authLogger.debug("Calling Supabase signUp");
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
 
-    if (error) {
-      authLogger.error("Supabase auth error", { error: error.message });
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    }
+        if (error) {
+          authLogger.error("Supabase auth error", { error: error.message });
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        }
 
-    authLogger.info("Supabase signUp successful");
+        authLogger.info("Supabase signUp successful");
 
-    // Check if user needs to confirm their email
-    if (data?.user?.identities?.length === 0) {
-      authLogger.info("Email confirmation required", { email });
-      return new Response(
-        JSON.stringify({
-          message: "Please check your email for confirmation link",
-        }),
-        {
+        // Check if user needs to confirm their email
+        if (data?.user?.identities?.length === 0) {
+          authLogger.info("Email confirmation required", { email });
+          return new Response(
+            JSON.stringify({
+              message: "Please check your email for confirmation link",
+            }),
+            {
+              status: 200,
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }
+
+        authLogger.info("Registration successful, no email confirmation required", { email });
+        return new Response(JSON.stringify({ user: data.user }), {
           status: 200,
           headers: {
             "Content-Type": "application/json",
           },
-        }
-      );
-    }
-
-    authLogger.info("Registration successful, no email confirmation required", { email });
-    return new Response(JSON.stringify({ user: data.user }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  } catch (error) {
-    authLogger.error("Registration error", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    return new Response(
-      JSON.stringify({
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : undefined,
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        });
+      } catch (error) {
+        authLogger.error("Registration error", {
+          error: error instanceof Error ? error.message : "Unknown error",
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        return new Response(
+          JSON.stringify({
+            error: "Internal server error",
+            details: error instanceof Error ? error.message : undefined,
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
       }
-    );
-  }
+    },
+    "registerEnabled"
+  );
+
+  return middlewareResponse;
 };
