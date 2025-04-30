@@ -1,6 +1,6 @@
 import { useGenerate } from "./hooks/useGenerate";
 import { TextInputSection } from "./components/TextInputSection";
-import { GenerationProgress } from "../../GenerationProgress";
+import { GenerationProgress } from "./components/GenerationProgress";
 import { FlashcardReviewSection } from "./components/FlashcardReviewSection";
 import { ErrorNotification } from "../../common/ErrorNotification";
 import { CompletionModal } from "./components/CompletionModal";

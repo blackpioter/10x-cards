@@ -69,7 +69,7 @@ vi.mock("./components/TextInputSection", () => ({
   ),
 }));
 
-vi.mock("../../GenerationProgress", () => ({
+vi.mock("./components/GenerationProgress", () => ({
   GenerationProgress: ({ status }: GenerationProgressProps) => <div data-testid="progress">{status}</div>,
 }));
 
