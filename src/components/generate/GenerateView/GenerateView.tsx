@@ -1,11 +1,13 @@
+import * as React from "react";
 import { useGenerate } from "./hooks/useGenerate";
 import { TextInputSection } from "./components/TextInputSection";
 import { GenerationProgress } from "./components/GenerationProgress";
 import { FlashcardReviewSection } from "./components/FlashcardReviewSection";
 import { ErrorNotification } from "../../common/ErrorNotification";
 import { CompletionModal } from "./components/CompletionModal";
-import * as React from "react";
 import { logger } from "@/lib/logger";
+import { TEST_IDS, STATES } from "./constants";
+import type { LocalErrorState } from "./types";
 
 export function GenerateView() {
   const { state, handleGenerate, handleComplete, handleGenerateNew, handleViewAll, clearError } = useGenerate();
@@ -19,34 +21,39 @@ export function GenerateView() {
   }, [state]);
 
   return (
-    <div className="space-y-6" data-testid="generate-view">
+    <div className="space-y-6" data-testid={TEST_IDS.GENERATE_VIEW}>
       {state.error && (
         <ErrorNotification
-          error={{
-            type: "api",
-            message: state.error,
-          }}
+          error={
+            {
+              type: "api",
+              message: state.error,
+              timestamp: Date.now(),
+            } satisfies LocalErrorState
+          }
           onClose={clearError}
-          data-testid="error-notification"
+          data-testid={TEST_IDS.ERROR_NOTIFICATION}
         />
       )}
 
-      {state.stage === "input" && (
-        <TextInputSection onGenerate={handleGenerate} isGenerating={false} data-testid="text-input-section" />
+      {state.stage === STATES.INPUT && (
+        <TextInputSection onGenerate={handleGenerate} isGenerating={false} data-testid={TEST_IDS.TEXT_INPUT} />
       )}
 
-      {state.stage === "generating" && <GenerationProgress status="generating" data-testid="generation-progress" />}
+      {state.stage === STATES.GENERATING && (
+        <GenerationProgress status="generating" data-testid={TEST_IDS.GENERATION_PROGRESS} />
+      )}
 
-      {state.stage === "review" && state.proposals && (
+      {state.stage === STATES.REVIEW && state.proposals && (
         <FlashcardReviewSection
           flashcards={state.proposals.proposals}
           onComplete={handleComplete}
-          data-testid="flashcard-review-section"
+          data-testid={TEST_IDS.REVIEW_SECTION}
         />
       )}
 
       <CompletionModal
-        isOpen={state.stage === "completed"}
+        isOpen={state.stage === STATES.COMPLETED}
         onGenerateNew={handleGenerateNew}
         onViewAll={handleViewAll}
       />
