@@ -150,7 +150,7 @@ export interface FlashcardProposalListViewModel {
 }
 
 export interface GenerateViewState {
-  stage: "input" | "generating" | "review";
+  stage: "input" | "generating" | "review" | "completed";
   error?: string;
   generationId?: string;
   proposals?: FlashcardProposalListViewModel;

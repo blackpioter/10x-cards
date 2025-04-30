@@ -5,6 +5,16 @@ import { useGenerate } from "./useGenerate";
 import "@testing-library/jest-dom";
 import type { FlashcardProposalViewModel } from "../../../types";
 
+// Mock the logger
+vi.mock("@/lib/logger", () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 // Interfejsy dla mocków komponentów
 interface TextInputSectionProps {
   onGenerate: (text: string) => void;
@@ -44,6 +54,8 @@ vi.mock("./useGenerate", () => ({
     },
     handleGenerate: vi.fn(),
     handleComplete: vi.fn(),
+    handleGenerateNew: vi.fn(),
+    handleViewAll: vi.fn(),
     clearError: vi.fn(),
   })),
 }));
@@ -94,6 +106,8 @@ describe("GenerateView", () => {
         state: { stage: "input", error: undefined, proposals: undefined },
         handleGenerate: vi.fn(),
         handleComplete: vi.fn(),
+        handleGenerateNew: vi.fn(),
+        handleViewAll: vi.fn(),
         clearError: vi.fn(),
       });
 
@@ -108,6 +122,8 @@ describe("GenerateView", () => {
         state: { stage: "generating", error: undefined, proposals: undefined },
         handleGenerate: vi.fn(),
         handleComplete: vi.fn(),
+        handleGenerateNew: vi.fn(),
+        handleViewAll: vi.fn(),
         clearError: vi.fn(),
       });
 
@@ -133,6 +149,8 @@ describe("GenerateView", () => {
         state: { stage: "review", error: undefined, proposals: mockProposals },
         handleGenerate: vi.fn(),
         handleComplete: vi.fn(),
+        handleGenerateNew: vi.fn(),
+        handleViewAll: vi.fn(),
         clearError: vi.fn(),
       });
 
@@ -148,6 +166,8 @@ describe("GenerateView", () => {
         state: { stage: "input", error: "Test error message", proposals: undefined },
         handleGenerate: vi.fn(),
         handleComplete: vi.fn(),
+        handleGenerateNew: vi.fn(),
+        handleViewAll: vi.fn(),
         clearError: vi.fn(),
       });
 
@@ -162,6 +182,8 @@ describe("GenerateView", () => {
         state: { stage: "input", error: "Test error message", proposals: undefined },
         handleGenerate: vi.fn(),
         handleComplete: vi.fn(),
+        handleGenerateNew: vi.fn(),
+        handleViewAll: vi.fn(),
         clearError: mockClearError,
       });
 
@@ -178,6 +200,8 @@ describe("GenerateView", () => {
         state: { stage: "input", error: undefined, proposals: undefined },
         handleGenerate: mockHandleGenerate,
         handleComplete: vi.fn(),
+        handleGenerateNew: vi.fn(),
+        handleViewAll: vi.fn(),
         clearError: vi.fn(),
       });
 
@@ -202,6 +226,8 @@ describe("GenerateView", () => {
         state: { stage: "review", error: undefined, proposals: mockProposals },
         handleGenerate: vi.fn(),
         handleComplete: mockHandleComplete,
+        handleGenerateNew: vi.fn(),
+        handleViewAll: vi.fn(),
         clearError: vi.fn(),
       });
 

@@ -8,6 +8,7 @@ export class GeneratePage {
   readonly generationProgress: Locator;
   readonly flashcardReviewSection: Locator;
   readonly errorNotification: Locator;
+  readonly completionModal: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -17,6 +18,7 @@ export class GeneratePage {
     this.generationProgress = page.getByTestId("generation-progress");
     this.flashcardReviewSection = page.getByTestId("flashcard-review-section");
     this.errorNotification = page.getByTestId("error-notification");
+    this.completionModal = page.getByTestId("completion-modal");
   }
 
   // Navigation
@@ -105,9 +107,28 @@ export class GeneratePage {
     };
   }
 
+  // Completion Modal actions
+  async waitForCompletionModal() {
+    await expect(this.completionModal).toBeVisible({ timeout: 10000 });
+  }
+
+  async clickGenerateNew() {
+    await this.completionModal.getByTestId("generate-new-button").click();
+    await expect(this.textInputSection).toBeVisible();
+  }
+
+  async clickViewAll() {
+    await this.completionModal.getByTestId("view-all-button").click();
+    await this.page.waitForURL("/flashcards");
+  }
+
+  async expectCompletionModalVisible() {
+    await expect(this.completionModal).toBeVisible();
+  }
+
   async waitForReviewComplete() {
-    // Wait for redirection or state change that indicates review is complete
-    await this.page.waitForURL("/flashcards", { timeout: 10000 });
+    // Wait for completion modal to appear
+    await this.waitForCompletionModal();
   }
 
   // Error handling

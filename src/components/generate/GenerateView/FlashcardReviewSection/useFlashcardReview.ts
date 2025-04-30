@@ -12,8 +12,46 @@ export function useFlashcardReview(
   const [pendingUpdates, setPendingUpdates] = React.useState<Map<string, "accepted" | "rejected" | "pending">>(
     new Map()
   );
+  const [isCompleting, setIsCompleting] = React.useState(false);
 
   const stats = useFlashcardStats(proposals);
+
+  const completeReview = React.useCallback(async () => {
+    if (isCompleting) return;
+    setIsCompleting(true);
+
+    try {
+      // Wait for any pending updates to complete
+      if (pendingUpdates.size > 0) {
+        await updateFlashcardStatus(pendingUpdates);
+        setPendingUpdates(new Map());
+      }
+
+      // Double check the state after updates
+      const pendingCards = proposals.filter((card) => card.status === "pending");
+      if (pendingCards.length > 0) {
+        logger.debug("Found pending cards after updates, aborting completion");
+        setIsCompleting(false);
+        return;
+      }
+
+      onComplete(proposals);
+    } catch (error) {
+      logger.error("Failed to complete review:", error);
+      setIsCompleting(false);
+    }
+  }, [proposals, pendingUpdates, onComplete, isCompleting]);
+
+  // Effect to check if all cards have been reviewed
+  React.useEffect(() => {
+    const pendingCards = proposals.filter((card) => card.status === "pending");
+    const totalCards = proposals.length;
+    const reviewedCards = proposals.filter((card) => card.status === "accepted" || card.status === "rejected").length;
+
+    if (totalCards > 0 && pendingCards.length === 0 && reviewedCards === totalCards) {
+      completeReview();
+    }
+  }, [proposals, completeReview]);
 
   const updateFlashcardStatus = React.useCallback(async (updates: Map<string, "accepted" | "rejected" | "pending">) => {
     try {
@@ -25,15 +63,17 @@ export function useFlashcardReview(
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ status }),
+        }).then(async (response) => {
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`Failed to update flashcard ${id}: ${error.error || "Unknown error"}`);
+          }
+          return response;
         })
       );
 
       const results = await Promise.all(updatePromises);
-      const failedUpdates = results.filter((r) => !r.ok);
-
-      if (failedUpdates.length > 0) {
-        throw new Error(`Failed to update ${failedUpdates.length} flashcards`);
-      }
+      return results;
     } catch (error) {
       logger.error("Error updating flashcard statuses:", error);
       throw error;
@@ -72,104 +112,102 @@ export function useFlashcardReview(
       editedContent?: { front: string; back: string };
     }) => {
       try {
+        let newStatus: "accepted" | "rejected" | "pending" | undefined;
+
+        // Determine the new status based on action type
+        if (action.type === "accept") newStatus = "accepted";
+        else if (action.type === "reject") newStatus = "rejected";
+        else if (action.type === "reset") newStatus = "pending";
+
         // Update local state immediately
-        setProposals((prev) =>
-          prev.map((card) => {
+        setProposals((prevProposals) => {
+          const updatedProposals = prevProposals.map((card) => {
             if (card.id !== action.proposalId) return card;
 
-            switch (action.type) {
-              case "accept":
-                return { ...card, status: "accepted" as const };
-              case "reject":
-                return { ...card, status: "rejected" as const };
-              case "edit":
-                if (!action.editedContent) return card;
-                return {
-                  ...card,
-                  front: action.editedContent.front,
-                  back: action.editedContent.back,
-                  isEdited: true,
-                  originalContent: card.originalContent || {
-                    front: card.front,
-                    back: card.back,
-                  },
-                };
-              case "reset":
-                return {
-                  ...card,
-                  status: "pending" as const,
-                };
-              case "restore":
-                return {
-                  ...card,
-                  front: card.originalContent?.front || card.front,
-                  back: card.originalContent?.back || card.back,
-                  isEdited: false,
-                  originalContent: undefined,
-                };
-              default:
-                return card;
-            }
-          })
-        );
+            return (() => {
+              switch (action.type) {
+                case "accept":
+                  return { ...card, status: "accepted" as const };
+                case "reject":
+                  return { ...card, status: "rejected" as const };
+                case "edit":
+                  if (!action.editedContent) return card;
+                  return {
+                    ...card,
+                    front: action.editedContent.front,
+                    back: action.editedContent.back,
+                    isEdited: true,
+                    originalContent: card.originalContent || {
+                      front: card.front,
+                      back: card.back,
+                    },
+                  };
+                case "reset":
+                  return {
+                    ...card,
+                    status: "pending" as const,
+                  };
+                case "restore":
+                  return {
+                    ...card,
+                    front: card.originalContent?.front || card.front,
+                    back: card.originalContent?.back || card.back,
+                    isEdited: false,
+                    originalContent: undefined,
+                  };
+                default:
+                  return card;
+              }
+            })();
+          });
 
-        // Add status change to pending updates
-        if (action.type === "accept" || action.type === "reject" || action.type === "reset") {
-          const status = action.type === "accept" ? "accepted" : action.type === "reject" ? "rejected" : "pending";
-          setPendingUpdates((prev) => new Map(prev).set(action.proposalId, status));
-        }
+          return updatedProposals;
+        });
 
-        // Check if all cards have been reviewed
-        const updatedProposals = proposals.map((card) =>
-          card.id === action.proposalId
-            ? ({
-                ...card,
-                status: action.type === "accept" ? "accepted" : action.type === "reject" ? "rejected" : "pending",
-              } as FlashcardProposalViewModel)
-            : card
-        );
-
-        if (!updatedProposals.some((card) => card.status === "pending")) {
-          // Save any pending updates before completing
-          if (pendingUpdates.size > 0) {
-            await updateFlashcardStatus(pendingUpdates);
-            setPendingUpdates(new Map());
-          }
-          onComplete(updatedProposals);
+        // Update pending updates outside of setProposals callback
+        if (newStatus) {
+          setPendingUpdates((prev) => {
+            const newUpdates = new Map(prev).set(action.proposalId, newStatus);
+            return newUpdates;
+          });
         }
       } catch (error) {
         logger.error("Failed to update flashcard:", error);
       }
     },
-    [proposals, pendingUpdates, updateFlashcardStatus, onComplete]
+    []
   );
 
   const handleBulkAction = React.useCallback(async () => {
     try {
+      // Get current pending cards before state update
       const pendingCards = proposals.filter((card) => card.status === "pending");
 
       // Update local state
-      setProposals((prev) =>
-        prev.map((card) => ({
+      setProposals((prev) => {
+        const updatedProposals = prev.map((card) => ({
           ...card,
           status: "accepted" as const,
-        }))
-      );
+        }));
 
-      // Add all updates to pending updates
+        return updatedProposals;
+      });
+
+      // Create updates map
       const updates = new Map(pendingCards.map((card) => [card.id, "accepted" as const]));
-      await updateFlashcardStatus(updates);
 
-      const updatedProposals = proposals.map((card) => ({
-        ...card,
-        status: "accepted" as const,
-      }));
-
-      onComplete(updatedProposals);
+      // Update pending updates
+      setPendingUpdates((prev) => {
+        const newUpdates = new Map(prev);
+        for (const [id, status] of updates) {
+          newUpdates.set(id, status);
+        }
+        return newUpdates;
+      });
     } catch (error) {
       logger.error("Failed to accept all flashcards:", error);
     }
-  }, [proposals, updateFlashcardStatus, onComplete]);
+  }, [proposals]);
 
   const filteredProposals = React.useMemo(() => {
     if (filter === "all") return proposals;

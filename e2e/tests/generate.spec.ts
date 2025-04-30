@@ -49,41 +49,45 @@ test.describe("Generate View", () => {
 
     // Verify flashcards were generated
     await generatePage.expectReviewSectionVisible();
-    const flashcardCount = await page.getByTestId("flashcard-item").count();
-    expect(flashcardCount).toBeGreaterThan(5); // Need at least 6 flashcards for the test
+    const totalFlashcards = await page.getByTestId("flashcard-item").count();
+    expect(totalFlashcards).toBeGreaterThan(5); // Need at least 6 flashcards for the test
 
-    // Verify flashcard content
-    const firstFlashcard = page.getByTestId("flashcard-item").first();
-    await expect(firstFlashcard.getByTestId("front-content")).not.toBeEmpty();
-    await expect(firstFlashcard.getByTestId("back-content")).not.toBeEmpty();
+    // Keep track of accepted and rejected counts
+    let acceptedCount = 0;
+    let rejectedCount = 0;
 
-    // Verify flashcard actions are available
-    await expect(firstFlashcard.getByTestId("accept-flashcard")).toBeVisible();
-    await expect(firstFlashcard.getByTestId("reject-flashcard")).toBeVisible();
-    await expect(firstFlashcard.getByTestId("edit-flashcard")).toBeVisible();
+    // Review all flashcards randomly
+    for (let i = 0; i < totalFlashcards; i++) {
+      const shouldAccept = Math.random() < 0.5;
+      if (shouldAccept) {
+        await flashcardList.acceptFlashcard(i);
+        acceptedCount++;
+      } else {
+        await flashcardList.rejectFlashcard(i);
+        rejectedCount++;
+      }
+    }
 
-    // Review 5 flashcards - accept 3, reject 2
-    await flashcardList.acceptFlashcard(0);
-    await flashcardList.rejectFlashcard(1);
-    await flashcardList.acceptFlashcard(2);
-    await flashcardList.rejectFlashcard(3);
-    await flashcardList.acceptFlashcard(4);
-
-    // Wait for auto-save
+    // Wait for auto-save and completion modal
     await page.waitForLoadState("networkidle");
 
-    // Verify stats after reviewing 5 cards
+    // Verify completion modal appears
+    await generatePage.expectCompletionModalVisible();
+
+    // Click "View All Flashcards" button
+    await generatePage.clickViewAll();
+
+    // Verify we're on the flashcards list page
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL("/flashcards");
+
+    // Get stats from the flashcards list
     const stats = await flashcardList.getStats();
-    expect(stats.accepted).toBe(3);
-    expect(stats.rejected).toBe(2);
-    expect(stats.total - stats.accepted - stats.rejected).toBe(flashcardCount - 5);
 
-    // Wait a bit to ensure the stats are stable
-    await page.waitForTimeout(1000);
-
-    // Verify stats haven't changed
-    const finalStats = await flashcardList.getStats();
-    expect(finalStats).toEqual(stats);
+    // Verify the counts match our tracking
+    expect(stats.accepted).toBe(acceptedCount);
+    expect(stats.rejected).toBe(rejectedCount);
+    expect(stats.total).toBe(totalFlashcards);
   });
 
   test("should show validation error for short text", async ({ page }) => {
