@@ -123,13 +123,14 @@ export function FlashcardsView() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="container mx-auto px-4 py-8 space-y-8" data-testid="flashcards-view">
       <div className="flex justify-between items-center">
         <FlashcardFilters
           statusFilter={statusFilter}
           onStatusFilterChange={filterByStatus}
           counts={statusCounts}
           isLoading={isLoading}
+          data-testid="flashcard-filters"
         />
         <Button onClick={handleOpenCreateModal}>
           <Plus className="w-4 h-4 mr-2" />
@@ -148,6 +149,7 @@ export function FlashcardsView() {
             onEdit={handleEditFlashcard}
             onDelete={deleteFlashcard}
             onStatusChange={updateFlashcardStatus}
+            data-testid="flashcard-list"
           />
 
           <div className="mt-8">

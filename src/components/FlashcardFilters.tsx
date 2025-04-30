@@ -28,27 +28,46 @@ export function FlashcardFilters({
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button variant={statusFilter === "all" ? "default" : "outline"} onClick={() => onStatusFilterChange("all")}>
-        All <span className="ml-1">{renderCount(counts.all)}</span>
+    <div className="flex flex-wrap gap-2" data-testid="flashcard-filters">
+      <Button
+        variant={statusFilter === "all" ? "default" : "outline"}
+        onClick={() => onStatusFilterChange("all")}
+        data-testid="filter-all"
+      >
+        All{" "}
+        <span className="ml-1" data-testid="filter-all-count">
+          {renderCount(counts.all)}
+        </span>
       </Button>
       <Button
         variant={statusFilter === "pending" ? "default" : "outline"}
         onClick={() => onStatusFilterChange("pending")}
+        data-testid="filter-pending"
       >
-        Pending <span className="ml-1">{renderCount(counts.pending)}</span>
+        Pending{" "}
+        <span className="ml-1" data-testid="filter-pending-count">
+          {renderCount(counts.pending)}
+        </span>
       </Button>
       <Button
         variant={statusFilter === "accepted" ? "default" : "outline"}
         onClick={() => onStatusFilterChange("accepted")}
+        data-testid="filter-accepted"
       >
-        Accepted <span className="ml-1">{renderCount(counts.accepted)}</span>
+        Accepted{" "}
+        <span className="ml-1" data-testid="filter-accepted-count">
+          {renderCount(counts.accepted)}
+        </span>
       </Button>
       <Button
         variant={statusFilter === "rejected" ? "default" : "outline"}
         onClick={() => onStatusFilterChange("rejected")}
+        data-testid="filter-rejected"
       >
-        Rejected <span className="ml-1">{renderCount(counts.rejected)}</span>
+        Rejected{" "}
+        <span className="ml-1" data-testid="filter-rejected-count">
+          {renderCount(counts.rejected)}
+        </span>
       </Button>
     </div>
   );
