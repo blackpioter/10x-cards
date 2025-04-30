@@ -1,9 +1,9 @@
 import { useGenerate } from "./hooks/useGenerate";
 import { TextInputSection } from "../../TextInputSection";
 import { GenerationProgress } from "../../GenerationProgress";
-import { FlashcardReviewSection } from "./FlashcardReviewSection";
+import { FlashcardReviewSection } from "./components/FlashcardReviewSection";
 import { ErrorNotification } from "../../common/ErrorNotification";
-import { CompletionModal } from "./CompletionModal";
+import { CompletionModal } from "./components/CompletionModal";
 import * as React from "react";
 import { logger } from "@/lib/logger";
 
