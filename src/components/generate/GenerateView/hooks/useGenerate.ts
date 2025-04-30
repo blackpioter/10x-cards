@@ -1,4 +1,5 @@
 import * as React from "react";
+import { logger } from "@/lib/logger";
 import type {
   GenerateViewState,
   FlashcardProposalViewModel,
@@ -25,6 +26,7 @@ export function useGenerate() {
 
   const handleGenerate = async (sourceText: string) => {
     try {
+      logger.info("[useGenerate] Starting generation with source text length:", sourceText.length);
       setState((prev) => ({ ...prev, stage: STATES.GENERATING, error: undefined }));
 
       const response = await fetch("/api/generations", {
@@ -37,10 +39,15 @@ export function useGenerate() {
 
       if (!response.ok) {
         const error = await response.json();
+        logger.error("[useGenerate] Generation failed", { status: response.status, error });
         throw new Error(error.error || "Failed to generate flashcards");
       }
 
       const data: GenerationCreateResponseDto = await response.json();
+      logger.debug("[useGenerate] Generation successful", {
+        generationId: data.generation_id,
+        proposalsCount: data.flashcard_proposals.length,
+      });
 
       const proposalViewModels: FlashcardProposalViewModel[] = data.flashcard_proposals.map(
         (proposal: FlashcardProposalDto) => ({
@@ -68,6 +75,7 @@ export function useGenerate() {
         generationId: data.generation_id,
       }));
     } catch (error) {
+      logger.error("[useGenerate] Error during generation", error);
       setState((prev) => ({
         ...prev,
         stage: STATES.INPUT,
@@ -77,15 +85,14 @@ export function useGenerate() {
   };
 
   const handleComplete = async (proposals: FlashcardProposalViewModel[]) => {
-    console.log("[useGenerate] handleComplete called with proposals:", proposals.length);
-    console.log("[useGenerate] Current state:", state.stage);
+    logger.info("[useGenerate] Completing review", {
+      proposalsCount: proposals.length,
+      currentStage: state.stage,
+    });
 
-    // Immediately set the completed state
     setState((prev) => {
-      console.log("[useGenerate] Setting completed state from:", prev.stage);
-
       if (!prev.proposals) {
-        console.log("[useGenerate] No proposals in state, this should not happen");
+        logger.warn("[useGenerate] No proposals in state during completion");
         return prev;
       }
 
@@ -98,13 +105,18 @@ export function useGenerate() {
         },
       };
 
-      console.log("[useGenerate] New state will be:", newState.stage);
+      logger.debug("[useGenerate] State updated to completed", {
+        previousStage: prev.stage,
+        newStage: newState.stage,
+        proposalsCount: proposals.length,
+      });
+
       return newState;
     });
   };
 
   const handleGenerateNew = () => {
-    console.log("[useGenerate] handleGenerateNew called");
+    logger.info("[useGenerate] Starting new generation");
     setState({
       stage: STATES.INPUT,
       error: undefined,
@@ -113,11 +125,12 @@ export function useGenerate() {
   };
 
   const handleViewAll = () => {
-    console.log("[useGenerate] handleViewAll called");
+    logger.info("[useGenerate] Navigating to flashcards view");
     window.location.href = "/flashcards";
   };
 
   const clearError = () => {
+    logger.debug("[useGenerate] Clearing error state");
     setState((prev) => ({ ...prev, error: undefined }));
   };
 
