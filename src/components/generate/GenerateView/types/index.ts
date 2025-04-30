@@ -9,6 +9,11 @@ export interface TextInputSectionProps {
 
 export interface GenerationProgressProps {
   status: GenerationStatus;
+  progress?: {
+    current: number;
+    total?: number;
+  };
+  onCancel?: () => void;
   "data-testid"?: string;
 }
 
@@ -44,7 +49,7 @@ export interface LocalGenerateViewState {
   generationId?: string;
 }
 
-export type GenerateViewStage = keyof typeof import("../constants").STATES;
+export type GenerateViewStage = "input" | "generating" | "review" | "completed";
 
 // Error Types
 export interface LocalErrorState extends ErrorState {
