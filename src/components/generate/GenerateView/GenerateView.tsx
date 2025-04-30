@@ -5,12 +5,13 @@ import { FlashcardReviewSection } from "./FlashcardReviewSection";
 import { ErrorNotification } from "../../common/ErrorNotification";
 import { CompletionModal } from "./CompletionModal";
 import * as React from "react";
+import { logger } from "@/lib/logger";
 
 export function GenerateView() {
   const { state, handleGenerate, handleComplete, handleGenerateNew, handleViewAll, clearError } = useGenerate();
 
   React.useEffect(() => {
-    console.log("[GenerateView] State changed:", {
+    logger.debug("[GenerateView] State changed:", {
       stage: state.stage,
       hasProposals: !!state.proposals,
       error: state.error,
