@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, X, Edit2, RotateCcw } from "lucide-react";
 import type { FlashcardProposalViewModel } from "@/types";
-import { TEST_IDS } from "../FlashcardList/constants";
+import { TEST_IDS } from "./constants";
 
 interface FlashcardListItemProps {
   proposal: FlashcardProposalViewModel;
