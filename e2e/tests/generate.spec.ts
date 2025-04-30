@@ -100,9 +100,13 @@ test.describe("Generate View", () => {
     await expect(page).toHaveURL("/flashcards");
     await page.waitForLoadState("networkidle");
 
-    // Verify the final counts on the flashcards list page match our review choices
-    const acceptedFlashcards = await page.locator('[data-status="accepted"]').count();
-    const rejectedFlashcards = await page.locator('[data-status="rejected"]').count();
+    // Get the counts from the filter buttons
+    const acceptedButtonText = await page.getByRole("button", { name: /Accepted \(\d+\)/ }).textContent();
+    const rejectedButtonText = await page.getByRole("button", { name: /Rejected \(\d+\)/ }).textContent();
+
+    // Extract numbers from button text (e.g., "Accepted (6)" -> 6)
+    const acceptedFlashcards = parseInt(acceptedButtonText?.match(/\((\d+)\)/)?.[1] || "0");
+    const rejectedFlashcards = parseInt(rejectedButtonText?.match(/\((\d+)\)/)?.[1] || "0");
 
     expect(acceptedFlashcards).toBe(acceptedCount);
     expect(rejectedFlashcards).toBe(rejectedCount);
