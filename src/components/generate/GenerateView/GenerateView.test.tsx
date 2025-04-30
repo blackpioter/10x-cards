@@ -61,7 +61,7 @@ vi.mock("./hooks/useGenerate", () => ({
 }));
 
 // Mock child components to focus on unit testing logic
-vi.mock("../../TextInputSection", () => ({
+vi.mock("./components/TextInputSection", () => ({
   TextInputSection: ({ onGenerate }: TextInputSectionProps) => (
     <button data-testid="generate-btn" onClick={() => onGenerate("Sample text")}>
       Generate

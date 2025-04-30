@@ -1,5 +1,5 @@
 import { useGenerate } from "./hooks/useGenerate";
-import { TextInputSection } from "../../TextInputSection";
+import { TextInputSection } from "./components/TextInputSection";
 import { GenerationProgress } from "../../GenerationProgress";
 import { FlashcardReviewSection } from "./components/FlashcardReviewSection";
 import { ErrorNotification } from "../../common/ErrorNotification";
