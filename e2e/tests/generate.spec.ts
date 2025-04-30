@@ -45,7 +45,7 @@ test.describe("Generate View", () => {
     // Wait for generation to complete
     await generatePage.waitForGenerationComplete();
 
-    // Verify flashcards were generated
+    // Verify flashcards were generated and review section is visible
     await generatePage.expectReviewSectionVisible();
 
     // Get initial stats
@@ -59,9 +59,16 @@ test.describe("Generate View", () => {
     let acceptedCount = 0;
     let rejectedCount = 0;
 
-    // Review all flashcards randomly
+    // Review each flashcard one by one in the review section
     for (let i = 0; i < initialStats.total; i++) {
+      // Get current flashcard content to verify it exists
+      const flashcard = await generatePage.getFlashcardContent(i);
+      expect(flashcard.front).toBeTruthy();
+      expect(flashcard.back).toBeTruthy();
+
+      // Randomly decide to accept or reject
       const shouldAccept = Math.random() < 0.5;
+
       if (shouldAccept) {
         await generatePage.acceptFlashcard(i);
         acceptedCount++;
@@ -69,29 +76,37 @@ test.describe("Generate View", () => {
         await generatePage.rejectFlashcard(i);
         rejectedCount++;
       }
+
+      // Verify stats update after each review
+      const currentStats = await generatePage.getReviewStats();
+      expect(currentStats.reviewed).toBe(i + 1);
+      expect(currentStats.accepted).toBe(acceptedCount);
+      expect(currentStats.rejected).toBe(rejectedCount);
     }
 
-    // Wait for auto-save and completion modal
-    await page.waitForLoadState("networkidle");
+    // After reviewing all flashcards, verify final stats in the review section
+    const finalReviewStats = await generatePage.getReviewStats();
+    expect(finalReviewStats.reviewed).toBe(initialStats.total);
+    expect(finalReviewStats.accepted).toBe(acceptedCount);
+    expect(finalReviewStats.rejected).toBe(rejectedCount);
 
-    // Verify completion modal appears
+    // Wait for completion modal to appear
     await generatePage.expectCompletionModalVisible();
 
-    // Click "View All Flashcards" button
+    // Click "View All Flashcards" button in the completion modal
     await generatePage.clickViewAll();
 
     // Verify we're on the flashcards list page
-    await page.waitForLoadState("networkidle");
     await expect(page).toHaveURL("/flashcards");
+    await page.waitForLoadState("networkidle");
 
-    // Get final stats
-    const finalStats = await generatePage.getReviewStats();
+    // Verify the final counts on the flashcards list page match our review choices
+    const acceptedFlashcards = await page.locator('[data-status="accepted"]').count();
+    const rejectedFlashcards = await page.locator('[data-status="rejected"]').count();
 
-    // Verify the counts match our tracking
-    expect(finalStats.accepted).toBe(acceptedCount);
-    expect(finalStats.rejected).toBe(rejectedCount);
-    expect(finalStats.total).toBe(initialStats.total);
-    expect(finalStats.reviewed).toBe(initialStats.total);
+    expect(acceptedFlashcards).toBe(acceptedCount);
+    expect(rejectedFlashcards).toBe(rejectedCount);
+    expect(acceptedFlashcards + rejectedFlashcards).toBe(initialStats.total);
   });
 
   test("should show validation error for short text", async ({ page }) => {

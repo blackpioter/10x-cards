@@ -42,17 +42,14 @@ export class GeneratePage {
 
     const generateButton = this.textInputSection.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.SUBMIT);
 
-    // Check if button is enabled before proceeding
-    const isEnabled = await generateButton.isEnabled();
-    if (!isEnabled) {
-      return;
-    }
-
-    await generateButton.click({ force: true });
+    // Wait for button to be enabled and visible
+    await expect(generateButton).toBeEnabled();
+    await expect(generateButton).toBeVisible();
+    await generateButton.click();
 
     // Wait for the generation to start only if requested
     if (options.waitForProgress) {
-      await expect(this.generationProgress).toBeVisible({ timeout: 10000 });
+      await expect(this.generationProgress).toBeVisible();
     }
   }
 
@@ -68,7 +65,9 @@ export class GeneratePage {
 
   // Generation Progress actions
   async waitForGenerationComplete() {
+    // Wait for review section to be visible
     await expect(this.flashcardReviewSection).toBeVisible({ timeout: 30000 });
+    await this.page.waitForLoadState("networkidle");
   }
 
   async cancelGeneration() {
@@ -78,18 +77,21 @@ export class GeneratePage {
 
   // Review Section actions
   async acceptFlashcard(index: number) {
-    const acceptButton = this.page.getByRole("button", { name: "Accept" }).nth(index);
-    await acceptButton.click();
+    const acceptButtons = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_ITEM.ACTIONS.ACCEPT);
+    await acceptButtons.nth(index).click();
+    await this.page.waitForLoadState("networkidle");
   }
 
   async rejectFlashcard(index: number) {
-    const rejectButton = this.page.getByRole("button", { name: "Reject" }).nth(index);
-    await rejectButton.click();
+    const rejectButtons = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_ITEM.ACTIONS.REJECT);
+    await rejectButtons.nth(index).click();
+    await this.page.waitForLoadState("networkidle");
   }
 
   async editFlashcard(index: number, { front, back }: { front?: string; back?: string }) {
     // Click edit button for the flashcard
     const editButton = this.page.getByRole("button", { name: "Edit" }).nth(index);
+    await expect(editButton).toBeEnabled();
     await editButton.click();
 
     // Fill in the form if values provided
@@ -105,27 +107,36 @@ export class GeneratePage {
   }
 
   async acceptAllFlashcards() {
-    await this.page.getByRole("button", { name: "Accept All" }).click();
+    const acceptAllButton = this.page.getByRole("button", { name: "Accept All" });
+    await expect(acceptAllButton).toBeEnabled();
+    await acceptAllButton.click();
   }
 
   async getReviewStats() {
-    const statsText = await this.page.getByText(/\d+ of \d+ reviewed/).textContent();
-    const detailsText = await this.page.getByText(/\d+ edited • \d+ accepted • \d+ rejected/).textContent();
+    const statsContainer = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_LIST.STATS.CONTAINER);
 
-    // Parse stats from text
-    const reviewed = statsText ? parseInt(statsText.match(/(\d+) of \d+/)?.[1] || "0") : 0;
-    const total = statsText ? parseInt(statsText.match(/\d+ of (\d+)/)?.[1] || "0") : 0;
+    // Wait for stats to be visible and contain numbers
+    await expect(statsContainer).toBeVisible();
+    await expect(statsContainer).toContainText(/\d+/);
 
-    const editedMatch = detailsText?.match(/(\d+) edited/);
-    const acceptedMatch = detailsText?.match(/(\d+) accepted/);
-    const rejectedMatch = detailsText?.match(/(\d+) rejected/);
+    // Get individual stat elements
+    const reviewedText = await statsContainer.textContent();
+    const editedCount = await this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_LIST.STATS.EDITED).textContent();
+    const acceptedCount = await this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_LIST.STATS.ACCEPTED).textContent();
+    const rejectedCount = await this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_LIST.STATS.REJECTED).textContent();
+
+    // Parse reviewed and total from the text
+    const reviewMatch = reviewedText?.match(/(\d+) of (\d+) reviewed/);
+    if (!reviewMatch) {
+      throw new Error("Could not parse review stats - invalid format of reviewed text");
+    }
 
     return {
-      reviewed,
-      total,
-      edited: editedMatch ? parseInt(editedMatch[1]) : 0,
-      accepted: acceptedMatch ? parseInt(acceptedMatch[1]) : 0,
-      rejected: rejectedMatch ? parseInt(rejectedMatch[1]) : 0,
+      reviewed: parseInt(reviewMatch[1]),
+      total: parseInt(reviewMatch[2]),
+      edited: parseInt(editedCount || "0"),
+      accepted: parseInt(acceptedCount || "0"),
+      rejected: parseInt(rejectedCount || "0"),
     };
   }
 
@@ -139,15 +150,13 @@ export class GeneratePage {
   }
 
   async getFlashcardContent(index: number) {
-    const flashcardTexts = await this.page.getByText(/^(Front|Back)/).all();
+    const flashcardFronts = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_ITEM.CONTENT.FRONT);
+    const flashcardBacks = this.page.getByTestId(E2E_TEST_IDS.FLASHCARD_ITEM.CONTENT.BACK);
 
-    const frontText = (await flashcardTexts[index * 2].textContent()) || "";
-    const backText = (await flashcardTexts[index * 2 + 1].textContent()) || "";
+    const front = await flashcardFronts.nth(index).textContent();
+    const back = await flashcardBacks.nth(index).textContent();
 
-    return {
-      front: frontText.replace("Front ", ""),
-      back: backText.replace("Back ", ""),
-    };
+    return { front, back };
   }
 
   // Completion Modal actions
@@ -183,10 +192,9 @@ export class GeneratePage {
   }
 
   async expectErrorVisible(errorType?: string) {
-    await expect(this.errorNotification).toBeVisible({ timeout: 10000 });
-
+    await expect(this.errorNotification).toBeVisible();
     if (errorType) {
-      await expect(this.errorNotification).toContainText(errorType, { timeout: 10000 });
+      await expect(this.errorNotification).toContainText(errorType);
     }
   }
 }

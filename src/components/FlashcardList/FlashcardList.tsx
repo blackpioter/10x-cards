@@ -1,7 +1,7 @@
 import * as React from "react";
 import type { FlashcardProposalViewModel } from "@/types";
 import { Button } from "@/components/ui/button";
-import { FlashcardListItem } from "@/components/FlashcardListItem";
+import { FlashcardListItem } from "@/components/FlashcardListItem/FlashcardListItem";
 import { TEST_IDS } from "./constants";
 
 interface FlashcardListProps {
@@ -18,16 +18,9 @@ interface FlashcardListProps {
     rejected: number;
     edited: number;
   };
-  "data-testid"?: string;
 }
 
-export function FlashcardList({
-  proposals,
-  onItemAction,
-  onBulkAction,
-  stats,
-  "data-testid": testId = TEST_IDS.CONTAINER,
-}: FlashcardListProps) {
+export function FlashcardList({ proposals, onItemAction, onBulkAction, stats }: FlashcardListProps) {
   const [editingId, setEditingId] = React.useState<string | null>(null);
 
   const handleEdit = React.useCallback(
@@ -83,7 +76,7 @@ export function FlashcardList({
   );
 
   return (
-    <div className="space-y-6" data-testid={testId}>
+    <div className="space-y-6" data-testid={TEST_IDS.CONTAINER}>
       <div className="space-y-4">
         {/* Progress bar */}
         <div className="w-full bg-muted rounded-full h-2">
