@@ -40,8 +40,40 @@ export const STATUS_MESSAGES = {
 // Test IDs
 export const TEST_IDS = {
   GENERATE_VIEW: "generate-view",
-  TEXT_INPUT: "text-input-section",
-  GENERATION_PROGRESS: "generation-progress",
-  REVIEW_SECTION: "flashcard-review-section",
+  TEXT_INPUT: {
+    FORM: "text-input-form",
+    TEXTAREA: "text-input-textarea",
+    CHARACTER_COUNT: "text-input-character-count",
+    CHARACTERS_NEEDED: "text-input-characters-needed",
+    SUBMIT: "text-input-submit",
+  },
+  GENERATION_PROGRESS: {
+    CONTAINER: "generation-progress",
+    SPINNER: "generation-progress-spinner",
+    STATUS: "generation-progress-status",
+    CANCEL: "generation-progress-cancel",
+  },
+  REVIEW_SECTION: {
+    CONTAINER: "flashcard-review-section",
+    STATS: {
+      CONTAINER: "review-section-stats",
+      EDITED: "review-section-stat-edited",
+      ACCEPTED: "review-section-stat-accepted",
+      REJECTED: "review-section-stat-rejected",
+    },
+    FILTERS: {
+      ALL: "review-section-filter-all",
+      ACCEPTED: "review-section-filter-accepted",
+      REJECTED: "review-section-filter-rejected",
+    },
+    ACTIONS: {
+      ACCEPT_ALL: "review-section-accept-all",
+    },
+  },
+  COMPLETION_MODAL: {
+    CONTAINER: "completion-modal",
+    GENERATE_NEW: "completion-modal-generate-new",
+    VIEW_ALL: "completion-modal-view-all",
+  },
   ERROR_NOTIFICATION: "error-notification",
 } as const;
