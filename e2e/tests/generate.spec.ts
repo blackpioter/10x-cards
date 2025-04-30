@@ -3,6 +3,7 @@ import { GeneratePage } from "../pages/generate.page";
 import { FlashcardListPage } from "../pages/flashcard-list.page";
 import { LoginPage } from "../pages/login.page";
 import { MEMORY_TECHNIQUES_TEXT, SHORT_TEXT } from "../fixtures/generate.fixture";
+import { E2E_TEST_IDS } from "../constants/test-ids";
 
 test.describe("Generate View", () => {
   let generatePage: GeneratePage;
@@ -42,15 +43,15 @@ test.describe("Generate View", () => {
     // Verify generation progress UI
     await generatePage.expectGenerationInProgress();
     await expect(page.getByText("Generating flashcards...")).toBeVisible();
-    await expect(page.getByTestId("generation-progress")).toBeVisible();
+    await expect(page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.GENERATION_PROGRESS.CONTAINER)).toBeVisible();
 
     // Wait for generation to complete
     await generatePage.waitForGenerationComplete();
 
     // Verify flashcards were generated
     await generatePage.expectReviewSectionVisible();
-    const totalFlashcards = await page.getByTestId("flashcard-item").count();
-    expect(totalFlashcards).toBeGreaterThan(5); // Need at least 6 flashcards for the test
+    const totalFlashcards = await page.getByTestId(E2E_TEST_IDS.FLASHCARD_LIST.ITEM).count();
+    expect(totalFlashcards).toBeGreaterThan(5);
 
     // Keep track of accepted and rejected counts
     let acceptedCount = 0;
@@ -95,10 +96,10 @@ test.describe("Generate View", () => {
     await generatePage.enterText(SHORT_TEXT);
 
     // Verify validation state
-    const generateButton = await page.getByTestId("generate-button");
+    const generateButton = await page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.SUBMIT);
     await expect(generateButton).toBeDisabled();
 
-    const validationMessage = await page.getByTestId("characters-needed");
+    const validationMessage = await page.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.TEXT_INPUT.CHARACTERS_NEEDED);
     await expect(validationMessage).toBeVisible();
     await expect(validationMessage).toContainText("characters needed");
   });
