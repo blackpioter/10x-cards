@@ -3,12 +3,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ErrorNotificationProps } from "./types";
+import { TEST_IDS } from "./constants";
 
 export function ErrorNotification({
   error,
   onClose,
   autoHideDuration = 5000,
-  "data-testid": testId,
   className,
   enableAnimation = false,
   showProgressBar = false,
@@ -42,14 +42,14 @@ export function ErrorNotification({
     <Alert
       variant="destructive"
       className={`relative ${enableAnimation ? "animate-fadeIn" : ""} ${className ?? ""}`}
-      data-testid={testId}
+      data-testid={TEST_IDS.CONTAINER}
       role="alert"
       aria-live="polite"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <XCircle className="h-4 w-4" />
-      <AlertTitle>{getErrorTitle()}</AlertTitle>
+      <AlertTitle data-testid={TEST_IDS.MESSAGE}>{getErrorTitle()}</AlertTitle>
       <AlertDescription>{error.message}</AlertDescription>
       {error.action && (
         <div className="mt-2">
@@ -62,7 +62,7 @@ export function ErrorNotification({
         onClick={onClose}
         className="absolute top-4 right-4 text-destructive-foreground/70 hover:text-destructive-foreground"
         aria-label="Close error notification"
-        data-testid="close-error-button"
+        data-testid={TEST_IDS.CLOSE}
       >
         <XCircle className="h-4 w-4" />
       </button>
