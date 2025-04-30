@@ -32,7 +32,6 @@ export function GenerateView() {
             } satisfies LocalErrorState
           }
           onClose={clearError}
-          data-testid={TEST_IDS.ERROR_NOTIFICATION}
         />
       )}
 

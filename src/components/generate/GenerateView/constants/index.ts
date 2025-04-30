@@ -76,5 +76,4 @@ export const TEST_IDS = {
     GENERATE_NEW: "completion-modal-generate-new",
     VIEW_ALL: "completion-modal-view-all",
   },
-  ERROR_NOTIFICATION: "error-notification",
 } as const;
