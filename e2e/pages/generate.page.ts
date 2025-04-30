@@ -76,45 +76,77 @@ export class GeneratePage {
     await cancelButton.click();
   }
 
-  // Flashcard Review Section actions
-  async filterFlashcards(filter: "all" | "accepted" | "rejected") {
-    const filterMap = {
-      all: E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.FILTERS.ALL,
-      accepted: E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.FILTERS.ACCEPTED,
-      rejected: E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.FILTERS.REJECTED,
-    };
-    const filterButton = this.flashcardReviewSection.getByTestId(filterMap[filter]);
-    await filterButton.click();
+  // Review Section actions
+  async acceptFlashcard(index: number) {
+    const acceptButton = this.page.getByRole("button", { name: "Accept" }).nth(index);
+    await acceptButton.click();
   }
 
-  async getFlashcardsCount() {
-    const allButton = this.flashcardReviewSection.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.FILTERS.ALL);
-    const countText = await allButton.textContent();
-    const match = countText?.match(/\((\d+)\)/);
-    return match ? parseInt(match[1]) : 0;
+  async rejectFlashcard(index: number) {
+    const rejectButton = this.page.getByRole("button", { name: "Reject" }).nth(index);
+    await rejectButton.click();
+  }
+
+  async editFlashcard(index: number, { front, back }: { front?: string; back?: string }) {
+    // Click edit button for the flashcard
+    const editButton = this.page.getByRole("button", { name: "Edit" }).nth(index);
+    await editButton.click();
+
+    // Fill in the form if values provided
+    if (front !== undefined) {
+      await this.page.getByLabel("Front").fill(front);
+    }
+    if (back !== undefined) {
+      await this.page.getByLabel("Back").fill(back);
+    }
+
+    // Save changes
+    await this.page.getByRole("button", { name: "Save" }).click();
   }
 
   async acceptAllFlashcards() {
-    const acceptAllButton = this.flashcardReviewSection.getByTestId(
-      E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.ACTIONS.ACCEPT_ALL
-    );
-    await acceptAllButton.click();
+    await this.page.getByRole("button", { name: "Accept All" }).click();
   }
 
-  async getFlashcardStats() {
-    const stats = this.flashcardReviewSection.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.STATS.CONTAINER);
-    const editedCount = await stats.getByTestId(E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.STATS.EDITED).textContent();
-    const acceptedCount = await stats
-      .getByTestId(E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.STATS.ACCEPTED)
-      .textContent();
-    const rejectedCount = await stats
-      .getByTestId(E2E_TEST_IDS.GENERATE_VIEW.REVIEW_SECTION.STATS.REJECTED)
-      .textContent();
+  async getReviewStats() {
+    const statsText = await this.page.getByText(/\d+ of \d+ reviewed/).textContent();
+    const detailsText = await this.page.getByText(/\d+ edited • \d+ accepted • \d+ rejected/).textContent();
+
+    // Parse stats from text
+    const reviewed = statsText ? parseInt(statsText.match(/(\d+) of \d+/)?.[1] || "0") : 0;
+    const total = statsText ? parseInt(statsText.match(/\d+ of (\d+)/)?.[1] || "0") : 0;
+
+    const editedMatch = detailsText?.match(/(\d+) edited/);
+    const acceptedMatch = detailsText?.match(/(\d+) accepted/);
+    const rejectedMatch = detailsText?.match(/(\d+) rejected/);
 
     return {
-      edited: parseInt(editedCount || "0"),
-      accepted: parseInt(acceptedCount || "0"),
-      rejected: parseInt(rejectedCount || "0"),
+      reviewed,
+      total,
+      edited: editedMatch ? parseInt(editedMatch[1]) : 0,
+      accepted: acceptedMatch ? parseInt(acceptedMatch[1]) : 0,
+      rejected: rejectedMatch ? parseInt(rejectedMatch[1]) : 0,
+    };
+  }
+
+  async filterFlashcards(filter: "all" | "accepted" | "rejected") {
+    const buttonText = {
+      all: /All \(\d+\)/,
+      accepted: /Accepted \(\d+\)/,
+      rejected: /Rejected \(\d+\)/,
+    };
+    await this.page.getByRole("button", { name: buttonText[filter] }).click();
+  }
+
+  async getFlashcardContent(index: number) {
+    const flashcardTexts = await this.page.getByText(/^(Front|Back)/).all();
+
+    const frontText = (await flashcardTexts[index * 2].textContent()) || "";
+    const backText = (await flashcardTexts[index * 2 + 1].textContent()) || "";
+
+    return {
+      front: frontText.replace("Front ", ""),
+      back: backText.replace("Back ", ""),
     };
   }
 
