@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import type { FlashcardProposalViewModel } from "../../../../../types";
 import { FlashcardList } from "../../../../FlashcardList";
 import { useFlashcardReview } from "../../hooks";
+import { TEST_IDS } from "../../constants";
 
 interface FlashcardReviewSectionProps {
   flashcards: FlashcardProposalViewModel[];
@@ -13,7 +14,7 @@ interface FlashcardReviewSectionProps {
 export function FlashcardReviewSection({
   flashcards,
   onComplete,
-  "data-testid": testId = "flashcard-review-section",
+  "data-testid": testId = TEST_IDS.REVIEW_SECTION.CONTAINER,
 }: FlashcardReviewSectionProps) {
   const { proposals, stats, filter, setFilter, handleItemAction, handleBulkAction, filteredProposals } =
     useFlashcardReview(flashcards, onComplete);
@@ -25,13 +26,13 @@ export function FlashcardReviewSection({
           <h2 className="text-2xl font-semibold tracking-tight">Review Flashcards</h2>
           <p className="text-sm text-muted-foreground">Review and edit the generated flashcards before saving them.</p>
         </div>
-        <div className="flex items-center space-x-2" data-testid="filter-buttons">
+        <div className="flex items-center space-x-2" data-testid={TEST_IDS.REVIEW_SECTION.STATS.CONTAINER}>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setFilter("all")}
             className={filter === "all" ? "bg-muted" : ""}
-            data-testid="filter-all"
+            data-testid={TEST_IDS.REVIEW_SECTION.FILTERS.ALL}
           >
             All ({proposals.length})
           </Button>
@@ -40,7 +41,7 @@ export function FlashcardReviewSection({
             size="sm"
             onClick={() => setFilter("accepted")}
             className={filter === "accepted" ? "bg-muted" : ""}
-            data-testid="filter-accepted"
+            data-testid={TEST_IDS.REVIEW_SECTION.FILTERS.ACCEPTED}
           >
             Accepted ({stats.accepted})
           </Button>
@@ -49,7 +50,7 @@ export function FlashcardReviewSection({
             size="sm"
             onClick={() => setFilter("rejected")}
             className={filter === "rejected" ? "bg-muted" : ""}
-            data-testid="filter-rejected"
+            data-testid={TEST_IDS.REVIEW_SECTION.FILTERS.REJECTED}
           >
             Rejected ({stats.rejected})
           </Button>
@@ -61,7 +62,7 @@ export function FlashcardReviewSection({
         onItemAction={handleItemAction}
         onBulkAction={handleBulkAction}
         stats={stats}
-        data-testid="flashcard-list"
+        data-testid={`${testId}-list`}
       />
     </div>
   );

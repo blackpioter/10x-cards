@@ -1,7 +1,7 @@
-import { STATUS_MESSAGES } from "../../constants";
+import { STATUS_MESSAGES, TEST_IDS } from "../../constants";
 import type { GenerationProgressProps } from "../../types";
 
-export function GenerationProgress({ status, progress, onCancel, "data-testid": testId }: GenerationProgressProps) {
+export function GenerationProgress({ status, progress, onCancel }: GenerationProgressProps) {
   const getStatusMessage = () => {
     switch (status) {
       case "initializing":
@@ -18,13 +18,16 @@ export function GenerationProgress({ status, progress, onCancel, "data-testid": 
   };
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 space-y-4" data-testid={testId}>
+    <div
+      className="flex flex-col items-center justify-center py-12 space-y-4"
+      data-testid={TEST_IDS.GENERATION_PROGRESS.CONTAINER}
+    >
       <div className="flex items-center space-x-4">
         <div
           className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
-          data-testid={`${testId}-spinner`}
+          data-testid={TEST_IDS.GENERATION_PROGRESS.SPINNER}
         />
-        <span className="text-lg text-muted-foreground" data-testid={`${testId}-status`}>
+        <span className="text-lg text-muted-foreground" data-testid={TEST_IDS.GENERATION_PROGRESS.STATUS}>
           {getStatusMessage()}
         </span>
       </div>
@@ -32,7 +35,7 @@ export function GenerationProgress({ status, progress, onCancel, "data-testid": 
         <button
           onClick={onCancel}
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          data-testid={`${testId}-cancel`}
+          data-testid={TEST_IDS.GENERATION_PROGRESS.CANCEL}
         >
           Cancel
         </button>

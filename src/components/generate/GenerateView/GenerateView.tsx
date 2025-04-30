@@ -36,20 +36,12 @@ export function GenerateView() {
         />
       )}
 
-      {state.stage === STATES.INPUT && (
-        <TextInputSection onGenerate={handleGenerate} isGenerating={false} data-testid={TEST_IDS.TEXT_INPUT} />
-      )}
+      {state.stage === STATES.INPUT && <TextInputSection onGenerate={handleGenerate} isGenerating={false} />}
 
-      {state.stage === STATES.GENERATING && (
-        <GenerationProgress status="generating" data-testid={TEST_IDS.GENERATION_PROGRESS} />
-      )}
+      {state.stage === STATES.GENERATING && <GenerationProgress status="generating" />}
 
       {state.stage === STATES.REVIEW && state.proposals && (
-        <FlashcardReviewSection
-          flashcards={state.proposals.proposals}
-          onComplete={handleComplete}
-          data-testid={TEST_IDS.REVIEW_SECTION}
-        />
+        <FlashcardReviewSection flashcards={state.proposals.proposals} onComplete={handleComplete} />
       )}
 
       <CompletionModal
