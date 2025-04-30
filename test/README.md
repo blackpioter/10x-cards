@@ -35,7 +35,6 @@ src/
 test/
 ├── setup.ts
 ├── helpers/
-│   ├── renderWithProviders.ts
 │   └── testUtils.ts
 └── fixtures/
     └── testData.ts
