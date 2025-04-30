@@ -57,7 +57,6 @@ export function FlashcardReviewSection({ flashcards, onComplete }: FlashcardRevi
         onItemAction={handleItemAction}
         onBulkAction={handleBulkAction}
         stats={stats}
-        data-testid={TEST_IDS.REVIEW_SECTION.LIST}
       />
     </div>
   );
